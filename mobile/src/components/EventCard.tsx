@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import {
+  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -9,6 +10,7 @@ import {
 } from "react-native";
 
 import { EventItem } from "../types/Event";
+import { getImageUrl } from "../utils/imageUrl";
 
 type Props = {
   event: EventItem;
@@ -21,24 +23,22 @@ export default function EventCard({
 }: Props) {
   const eventDate = new Date(event.eventDate);
 
-  const formattedDate = eventDate.toLocaleDateString(
-    "en-US",
-    {
+  const formattedDate =
+    eventDate.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
-    }
-  );
+    });
 
-  const formattedTime = eventDate.toLocaleTimeString(
-    "en-US",
-    {
+  const formattedTime =
+    eventDate.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
-    }
-  );
+    });
 
   const soldOut = event.availableSeats <= 0;
+
+  const imageUrl = getImageUrl(event.image);
 
   return (
     <Pressable
@@ -48,15 +48,48 @@ export default function EventCard({
         pressed && styles.pressed,
       ]}
     >
-      <LinearGradient
-        colors={["#2563EB", "#4F46E5"]}
-        style={styles.cover}
-      >
+      {/* COVER IMAGE */}
+      <View style={styles.coverContainer}>
+        {imageUrl ? (
+          <Image
+            source={{
+              uri: imageUrl,
+            }}
+            style={styles.coverImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <LinearGradient
+            colors={[
+              "#2563EB",
+              "#4F46E5",
+            ]}
+            style={styles.placeholderCover}
+          >
+            <Ionicons
+              name="calendar"
+              size={50}
+              color="rgba(255,255,255,0.35)"
+            />
+          </LinearGradient>
+        )}
+
+        {/* DARK IMAGE OVERLAY */}
+        <LinearGradient
+          colors={[
+            "rgba(15,23,42,0.02)",
+            "rgba(15,23,42,0.15)",
+            "rgba(15,23,42,0.82)",
+          ]}
+          style={styles.overlay}
+        />
+
+        {/* TOP ROW */}
         <View style={styles.coverTop}>
           <View style={styles.iconBox}>
             <Ionicons
               name="calendar"
-              size={26}
+              size={21}
               color="#FFFFFF"
             />
           </View>
@@ -70,19 +103,23 @@ export default function EventCard({
             ]}
           >
             <Text style={styles.statusText}>
-              {soldOut ? "SOLD OUT" : "AVAILABLE"}
+              {soldOut
+                ? "SOLD OUT"
+                : "AVAILABLE"}
             </Text>
           </View>
         </View>
 
+        {/* EVENT TITLE */}
         <Text
           style={styles.coverTitle}
           numberOfLines={2}
         >
           {event.title}
         </Text>
-      </LinearGradient>
+      </View>
 
+      {/* CARD INFORMATION */}
       <View style={styles.content}>
         <View style={styles.infoRow}>
           <Ionicons
@@ -96,6 +133,12 @@ export default function EventCard({
           </Text>
 
           <View style={styles.dot} />
+
+          <Ionicons
+            name="time-outline"
+            size={17}
+            color="#2563EB"
+          />
 
           <Text style={styles.infoText}>
             {formattedTime}
@@ -117,21 +160,35 @@ export default function EventCard({
           </Text>
         </View>
 
+        {/* FOOTER */}
         <View style={styles.footer}>
           <View style={styles.seatPill}>
             <Ionicons
               name="people-outline"
               size={16}
-              color="#475569"
+              color={
+                soldOut
+                  ? "#DC2626"
+                  : "#475569"
+              }
             />
 
-            <Text style={styles.seatText}>
-              {event.availableSeats} / {event.capacity} seats
+            <Text
+              style={[
+                styles.seatText,
+                soldOut &&
+                  styles.soldOutSeatText,
+              ]}
+            >
+              {event.availableSeats} /{" "}
+              {event.capacity} seats
             </Text>
           </View>
 
           <View style={styles.viewButton}>
-            <Text style={styles.viewButtonText}>
+            <Text
+              style={styles.viewButtonText}
+            >
               View
             </Text>
 
@@ -155,128 +212,230 @@ const styles = StyleSheet.create({
     marginBottom: 18,
 
     shadowColor: "#0F172A",
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.1,
     shadowRadius: 14,
+
     shadowOffset: {
       width: 0,
-      height: 7,
+      height: 6,
     },
 
     elevation: 4,
   },
 
   pressed: {
-    opacity: 0.92,
-    transform: [{ scale: 0.99 }],
+    opacity: 0.93,
+    transform: [
+      {
+        scale: 0.99,
+      },
+    ],
   },
 
-  cover: {
-    height: 150,
-    padding: 18,
-    justifyContent: "space-between",
+  /*
+   * IMAGE AREA
+   */
+  coverContainer: {
+    height: 190,
+    position: "relative",
+    backgroundColor: "#2563EB",
   },
 
-  coverTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  coverImage: {
+    ...StyleSheet.absoluteFillObject,
+    width: "100%",
+    height: "100%",
+  },
+
+  placeholderCover: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
     alignItems: "center",
   },
 
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+
+  /*
+   * IMAGE TOP
+   */
+  coverTop: {
+    position: "absolute",
+    top: 15,
+    left: 15,
+    right: 15,
+
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
   iconBox: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.18)",
+    width: 42,
+    height: 42,
+    borderRadius: 13,
+
+    backgroundColor:
+      "rgba(15,23,42,0.40)",
+
+    borderWidth: 1,
+
+    borderColor:
+      "rgba(255,255,255,0.20)",
+
     justifyContent: "center",
     alignItems: "center",
   },
 
   statusBadge: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 11,
     paddingVertical: 7,
     borderRadius: 20,
   },
 
   availableBadge: {
-    backgroundColor: "rgba(22, 163, 74, 0.92)",
+    backgroundColor:
+      "rgba(22,163,74,0.94)",
   },
 
   soldOutBadge: {
-    backgroundColor: "rgba(220, 38, 38, 0.92)",
+    backgroundColor:
+      "rgba(220,38,38,0.94)",
   },
 
   statusText: {
     color: "#FFFFFF",
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 0.5,
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 0.6,
   },
 
+  /*
+   * TITLE ON IMAGE
+   */
   coverTitle: {
-    fontSize: 23,
+    position: "absolute",
+
+    left: 17,
+    right: 17,
+    bottom: 17,
+
     color: "#FFFFFF",
-    fontWeight: "800",
-    lineHeight: 29,
+
+    fontSize: 23,
+    fontWeight: "900",
+    lineHeight: 28,
+
+    textShadowColor:
+      "rgba(0,0,0,0.35)",
+
+    textShadowOffset: {
+      width: 0,
+      height: 1,
+    },
+
+    textShadowRadius: 3,
   },
 
+  /*
+   * CARD BODY
+   */
   content: {
-    padding: 18,
+    paddingHorizontal: 17,
+    paddingTop: 16,
+    paddingBottom: 15,
   },
 
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 11,
-    gap: 8,
+
+    gap: 7,
+
+    marginBottom: 10,
   },
 
   infoText: {
     color: "#475569",
-    fontSize: 14,
+    fontSize: 13,
     flexShrink: 1,
   },
 
   dot: {
     width: 4,
     height: 4,
-    backgroundColor: "#CBD5E1",
+
     borderRadius: 2,
+
+    backgroundColor: "#CBD5E1",
+
+    marginHorizontal: 1,
   },
 
+  /*
+   * FOOTER
+   */
   footer: {
     borderTopWidth: 1,
+
     borderTopColor: "#F1F5F9",
-    paddingTop: 14,
-    marginTop: 2,
+
+    paddingTop: 13,
+    marginTop: 3,
+
     flexDirection: "row",
-    alignItems: "center",
+
     justifyContent: "space-between",
+
+    alignItems: "center",
   },
 
   seatPill: {
     flexDirection: "row",
+
     alignItems: "center",
+
     gap: 6,
+
     backgroundColor: "#F8FAFC",
-    paddingHorizontal: 11,
-    paddingVertical: 8,
-    borderRadius: 12,
+
+    paddingHorizontal: 10,
+
+    paddingVertical: 7,
+
+    borderRadius: 11,
   },
 
   seatText: {
     color: "#475569",
-    fontWeight: "600",
-    fontSize: 13,
+
+    fontWeight: "700",
+
+    fontSize: 12,
+  },
+
+  soldOutSeatText: {
+    color: "#DC2626",
   },
 
   viewButton: {
     flexDirection: "row",
+
     alignItems: "center",
-    gap: 4,
+
+    gap: 5,
+
+    paddingHorizontal: 4,
+
+    paddingVertical: 6,
   },
 
   viewButtonText: {
     color: "#2563EB",
-    fontWeight: "700",
+
+    fontWeight: "900",
+
+    fontSize: 13,
   },
 });

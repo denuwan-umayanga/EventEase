@@ -25,7 +25,12 @@ const createEvent = async (req, res) => {
       });
     }
 
-    if (Number(capacity) < 1) {
+    const capacityNumber = Number(capacity);
+
+    if (
+      Number.isNaN(capacityNumber) ||
+      capacityNumber < 1
+    ) {
       return res.status(400).json({
         success: false,
         message: "Capacity must be at least 1",
@@ -41,13 +46,25 @@ const createEvent = async (req, res) => {
       });
     }
 
+    if (parsedDate <= new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: "Event date must be in the future",
+      });
+    }
+
+    const imagePath = req.file
+      ? `/uploads/${req.file.filename}`
+      : "";
+
     const event = await Event.create({
       title: title.trim(),
       description: description.trim(),
       location: location.trim(),
       eventDate: parsedDate,
-      capacity: Number(capacity),
-      availableSeats: Number(capacity),
+      capacity: capacityNumber,
+      availableSeats: capacityNumber,
+      image: imagePath,
       createdBy: req.user._id,
     });
 
@@ -91,8 +108,12 @@ const getEvents = async (req, res) => {
 // Get one event
 const getEventById = async (req, res) => {
   try {
-    const event = await Event.findById(req.params.id)
-      .populate("createdBy", "name email");
+    const event = await Event.findById(
+      req.params.id
+    ).populate(
+      "createdBy",
+      "name email"
+    );
 
     if (!event) {
       return res.status(404).json({
@@ -116,7 +137,9 @@ const getEventById = async (req, res) => {
 // Update event
 const updateEvent = async (req, res) => {
   try {
-    const event = await Event.findById(req.params.id);
+    const event = await Event.findById(
+      req.params.id
+    );
 
     if (!event) {
       return res.status(404).json({
@@ -126,11 +149,13 @@ const updateEvent = async (req, res) => {
     }
 
     if (
-      event.createdBy.toString() !== req.user._id.toString()
+      event.createdBy.toString() !==
+      req.user._id.toString()
     ) {
       return res.status(403).json({
         success: false,
-        message: "You are not allowed to update this event",
+        message:
+          "You are not allowed to update this event",
       });
     }
 
@@ -143,24 +168,58 @@ const updateEvent = async (req, res) => {
     } = req.body;
 
     if (title !== undefined) {
+      if (!title.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: "Event title cannot be empty",
+        });
+      }
+
       event.title = title.trim();
     }
 
     if (description !== undefined) {
-      event.description = description.trim();
+      if (!description.trim()) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Event description cannot be empty",
+        });
+      }
+
+      event.description =
+        description.trim();
     }
 
     if (location !== undefined) {
+      if (!location.trim()) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Event location cannot be empty",
+        });
+      }
+
       event.location = location.trim();
     }
 
     if (eventDate !== undefined) {
       const parsedDate = new Date(eventDate);
 
-      if (Number.isNaN(parsedDate.getTime())) {
+      if (
+        Number.isNaN(parsedDate.getTime())
+      ) {
         return res.status(400).json({
           success: false,
           message: "Invalid event date",
+        });
+      }
+
+      if (parsedDate <= new Date()) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Event date must be in the future",
         });
       }
 
@@ -170,15 +229,20 @@ const updateEvent = async (req, res) => {
     if (capacity !== undefined) {
       const newCapacity = Number(capacity);
 
-      if (newCapacity < 1) {
+      if (
+        Number.isNaN(newCapacity) ||
+        newCapacity < 1
+      ) {
         return res.status(400).json({
           success: false,
-          message: "Capacity must be at least 1",
+          message:
+            "Capacity must be at least 1",
         });
       }
 
       const bookedSeats =
-        event.capacity - event.availableSeats;
+        event.capacity -
+        event.availableSeats;
 
       if (newCapacity < bookedSeats) {
         return res.status(400).json({
@@ -189,11 +253,18 @@ const updateEvent = async (req, res) => {
       }
 
       event.capacity = newCapacity;
+
       event.availableSeats =
         newCapacity - bookedSeats;
     }
 
-    const updatedEvent = await event.save();
+    if (req.file) {
+      event.image =
+        `/uploads/${req.file.filename}`;
+    }
+
+    const updatedEvent =
+      await event.save();
 
     return res.status(200).json({
       success: true,
@@ -201,11 +272,15 @@ const updateEvent = async (req, res) => {
       event: updatedEvent,
     });
   } catch (error) {
-    console.error("Update event error:", error);
+    console.error(
+      "Update event error:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
-      message: "Server error while updating event",
+      message:
+        "Server error while updating event",
     });
   }
 };
@@ -213,7 +288,9 @@ const updateEvent = async (req, res) => {
 // Delete event
 const deleteEvent = async (req, res) => {
   try {
-    const event = await Event.findById(req.params.id);
+    const event = await Event.findById(
+      req.params.id
+    );
 
     if (!event) {
       return res.status(404).json({
@@ -223,11 +300,13 @@ const deleteEvent = async (req, res) => {
     }
 
     if (
-      event.createdBy.toString() !== req.user._id.toString()
+      event.createdBy.toString() !==
+      req.user._id.toString()
     ) {
       return res.status(403).json({
         success: false,
-        message: "You are not allowed to delete this event",
+        message:
+          "You are not allowed to delete this event",
       });
     }
 
@@ -238,11 +317,15 @@ const deleteEvent = async (req, res) => {
       message: "Event deleted successfully",
     });
   } catch (error) {
-    console.error("Delete event error:", error);
+    console.error(
+      "Delete event error:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
-      message: "Server error while deleting event",
+      message:
+        "Server error while deleting event",
     });
   }
 };

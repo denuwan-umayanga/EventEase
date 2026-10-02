@@ -1,11 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { LinearGradient } from "expo-linear-gradient";
+import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -19,20 +21,32 @@ import {
 import { API_URL } from "../../src/config/api";
 import { useAuth } from "../../src/context/AuthContext";
 
+type SelectedImage = {
+  uri: string;
+  fileName?: string | null;
+  mimeType?: string | null;
+};
+
 export default function CreateEventScreen() {
   const { token } = useAuth();
 
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  const [description, setDescription] =
+    useState("");
   const [location, setLocation] = useState("");
   const [capacity, setCapacity] = useState("");
 
-  const [eventDate, setEventDate] = useState(() => {
-    const date = new Date();
-    date.setDate(date.getDate() + 1);
-    date.setHours(18, 0, 0, 0);
-    return date;
-  });
+  const [image, setImage] =
+    useState<SelectedImage | null>(null);
+
+  const [eventDate, setEventDate] = useState(
+    () => {
+      const date = new Date();
+      date.setDate(date.getDate() + 1);
+      date.setHours(18, 0, 0, 0);
+      return date;
+    }
+  );
 
   const [showDatePicker, setShowDatePicker] =
     useState(false);
@@ -42,6 +56,43 @@ export default function CreateEventScreen() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const chooseImage = async () => {
+    setError("");
+
+    const permission =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert(
+        "Permission Required",
+        "Please allow EventEase to access your photos."
+      );
+      return;
+    }
+
+    const result =
+      await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 0.8,
+      });
+
+    if (!result.canceled) {
+      const asset = result.assets[0];
+
+      setImage({
+        uri: asset.uri,
+        fileName: asset.fileName,
+        mimeType: asset.mimeType,
+      });
+    }
+  };
+
+  const removeImage = () => {
+    setImage(null);
+  };
 
   const handleCreate = async () => {
     setError("");
@@ -78,21 +129,56 @@ export default function CreateEventScreen() {
     try {
       setLoading(true);
 
+      const formData = new FormData();
+
+      formData.append("title", title.trim());
+      formData.append(
+        "description",
+        description.trim()
+      );
+      formData.append(
+        "location",
+        location.trim()
+      );
+      formData.append(
+        "eventDate",
+        eventDate.toISOString()
+      );
+      formData.append(
+        "capacity",
+        String(capacityNumber)
+      );
+
+      if (image) {
+        const extension =
+          image.fileName?.split(".").pop() ||
+          "jpg";
+
+        const fileName =
+          image.fileName ||
+          `event-${Date.now()}.${extension}`;
+
+        const mimeType =
+          image.mimeType || "image/jpeg";
+
+        formData.append(
+          "image",
+          {
+            uri: image.uri,
+            name: fileName,
+            type: mimeType,
+          } as any
+        );
+      }
+
       const response = await fetch(
         `${API_URL}/api/events`,
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            title: title.trim(),
-            description: description.trim(),
-            location: location.trim(),
-            eventDate: eventDate.toISOString(),
-            capacity: capacityNumber,
-          }),
+          body: formData,
         }
       );
 
@@ -123,6 +209,11 @@ export default function CreateEventScreen() {
         ]
       );
     } catch (err) {
+      console.log(
+        "Create event error:",
+        err
+      );
+
       setError(
         "Unable to connect to the EventEase server."
       );
@@ -207,12 +298,100 @@ export default function CreateEventScreen() {
           </Text>
 
           <Text style={styles.headerSubtitle}>
-            Add the details below to publish a
-            new event.
+            Add event details and a cover image.
           </Text>
         </LinearGradient>
 
         <View style={styles.formCard}>
+          <Text style={styles.sectionLabel}>
+            Event Cover
+          </Text>
+
+          {image ? (
+            <View style={styles.imageContainer}>
+              <Image
+                source={{ uri: image.uri }}
+                style={styles.imagePreview}
+              />
+
+              <View
+                style={styles.imageOverlayActions}
+              >
+                <Pressable
+                  style={styles.imageActionButton}
+                  onPress={chooseImage}
+                >
+                  <Ionicons
+                    name="images-outline"
+                    size={18}
+                    color="#FFFFFF"
+                  />
+
+                  <Text
+                    style={styles.imageActionText}
+                  >
+                    Change
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  style={[
+                    styles.imageActionButton,
+                    styles.removeButton,
+                  ]}
+                  onPress={removeImage}
+                >
+                  <Ionicons
+                    name="trash-outline"
+                    size={18}
+                    color="#FFFFFF"
+                  />
+
+                  <Text
+                    style={styles.imageActionText}
+                  >
+                    Remove
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : (
+            <Pressable
+              style={styles.uploadBox}
+              onPress={chooseImage}
+            >
+              <View style={styles.uploadIcon}>
+                <Ionicons
+                  name="cloud-upload-outline"
+                  size={31}
+                  color="#2563EB"
+                />
+              </View>
+
+              <Text style={styles.uploadTitle}>
+                Add Event Cover
+              </Text>
+
+              <Text style={styles.uploadSubtitle}>
+                Choose a JPG, PNG or WEBP image
+              </Text>
+
+              <View style={styles.uploadButton}>
+                <Ionicons
+                  name="images-outline"
+                  size={17}
+                  color="#2563EB"
+                />
+
+                <Text
+                  style={styles.uploadButtonText}
+                >
+                  Choose Image
+                </Text>
+              </View>
+            </Pressable>
+          )}
+
           <FieldLabel
             icon="text-outline"
             text="Event Title"
@@ -386,7 +565,9 @@ export default function CreateEventScreen() {
                   />
 
                   <Text
-                    style={styles.createButtonText}
+                    style={
+                      styles.createButtonText
+                    }
                   >
                     Create Event
                   </Text>
@@ -415,7 +596,9 @@ function FieldLabel({
         color="#2563EB"
       />
 
-      <Text style={styles.label}>{text}</Text>
+      <Text style={styles.label}>
+        {text}
+      </Text>
     </View>
   );
 }
@@ -464,12 +647,107 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 24,
     padding: 20,
-
-    shadowColor: "#0F172A",
-    shadowOpacity: 0.05,
-    shadowRadius: 15,
-
     elevation: 2,
+  },
+
+  sectionLabel: {
+    color: "#0F172A",
+    fontSize: 17,
+    fontWeight: "900",
+    marginBottom: 13,
+  },
+
+  uploadBox: {
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+    borderColor: "#BFDBFE",
+    backgroundColor: "#F8FAFF",
+    borderRadius: 18,
+    minHeight: 190,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+    marginBottom: 24,
+  },
+
+  uploadIcon: {
+    width: 58,
+    height: 58,
+    borderRadius: 18,
+    backgroundColor: "#EFF6FF",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  uploadTitle: {
+    fontSize: 17,
+    fontWeight: "900",
+    color: "#0F172A",
+    marginTop: 13,
+  },
+
+  uploadSubtitle: {
+    color: "#64748B",
+    marginTop: 5,
+    fontSize: 12,
+  },
+
+  uploadButton: {
+    marginTop: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#EFF6FF",
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 12,
+  },
+
+  uploadButtonText: {
+    color: "#2563EB",
+    fontWeight: "800",
+  },
+
+  imageContainer: {
+    borderRadius: 18,
+    overflow: "hidden",
+    marginBottom: 24,
+  },
+
+  imagePreview: {
+    width: "100%",
+    height: 190,
+    backgroundColor: "#E2E8F0",
+  },
+
+  imageOverlayActions: {
+    position: "absolute",
+    right: 10,
+    bottom: 10,
+    flexDirection: "row",
+    gap: 8,
+  },
+
+  imageActionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor:
+      "rgba(15,23,42,0.78)",
+    paddingHorizontal: 11,
+    paddingVertical: 8,
+    borderRadius: 11,
+  },
+
+  removeButton: {
+    backgroundColor:
+      "rgba(185,28,28,0.88)",
+  },
+
+  imageActionText: {
+    color: "#FFFFFF",
+    fontWeight: "800",
+    fontSize: 12,
   },
 
   labelRow: {
@@ -499,14 +777,6 @@ const styles = StyleSheet.create({
 
   multilineInput: {
     minHeight: 110,
-  },
-
-  sectionLabel: {
-    color: "#0F172A",
-    fontSize: 17,
-    fontWeight: "800",
-    marginBottom: 13,
-    marginTop: 2,
   },
 
   twoColumns: {
@@ -565,6 +835,6 @@ const styles = StyleSheet.create({
   createButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "800",
+    fontWeight: "900",
   },
 });

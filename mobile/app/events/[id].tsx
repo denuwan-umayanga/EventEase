@@ -11,6 +11,7 @@ import React, {
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -22,6 +23,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { API_URL } from "../../src/config/api";
 import { useAuth } from "../../src/context/AuthContext";
 import { EventItem } from "../../src/types/Event";
+import { getImageUrl } from "../../src/utils/imageUrl";
 
 export default function EventDetailsScreen() {
   const { id } = useLocalSearchParams<{
@@ -33,7 +35,9 @@ export default function EventDetailsScreen() {
   const [event, setEvent] =
     useState<EventItem | null>(null);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] =
+    useState(true);
+
   const [deleting, setDeleting] =
     useState(false);
 
@@ -52,7 +56,8 @@ export default function EventDetailsScreen() {
 
       if (!response.ok) {
         setError(
-          data.message || "Unable to load event."
+          data.message ||
+            "Unable to load event."
         );
         return;
       }
@@ -168,7 +173,8 @@ export default function EventDetailsScreen() {
         </Text>
 
         <Text style={styles.errorText}>
-          {error || "Event could not be found."}
+          {error ||
+            "Event could not be found."}
         </Text>
 
         <Pressable
@@ -198,7 +204,11 @@ export default function EventDetailsScreen() {
 
   const isOwner = ownerId === user?.id;
 
-  const soldOut = event.availableSeats <= 0;
+  const soldOut =
+    event.availableSeats <= 0;
+
+  const imageUrl =
+    getImageUrl(event.image);
 
   return (
     <ScrollView
@@ -208,56 +218,108 @@ export default function EventDetailsScreen() {
         styles.scrollContent
       }
     >
-      <LinearGradient
-        colors={["#1D4ED8", "#4F46E5"]}
-        style={styles.hero}
-      >
-        <View style={styles.heroTopRow}>
-          <View style={styles.heroIcon}>
+      {/* IMAGE HERO */}
+      <View style={styles.hero}>
+        {imageUrl ? (
+          <Image
+            source={{
+              uri: imageUrl,
+            }}
+            style={styles.heroImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <LinearGradient
+            colors={[
+              "#1D4ED8",
+              "#4F46E5",
+            ]}
+            style={styles.heroPlaceholder}
+          >
             <Ionicons
               name="calendar"
-              size={34}
-              color="#FFFFFF"
+              size={80}
+              color="rgba(255,255,255,0.20)"
             />
+          </LinearGradient>
+        )}
+
+        <LinearGradient
+          colors={[
+            "rgba(15,23,42,0.05)",
+            "rgba(15,23,42,0.88)",
+          ]}
+          style={styles.heroOverlay}
+        />
+
+        <View style={styles.heroContent}>
+          <View style={styles.heroTopRow}>
+            <View style={styles.heroIcon}>
+              <Ionicons
+                name="calendar"
+                size={30}
+                color="#FFFFFF"
+              />
+            </View>
+
+            <View
+              style={[
+                styles.heroStatus,
+                soldOut
+                  ? styles.soldOutStatus
+                  : styles.availableStatus,
+              ]}
+            >
+              <Text
+                style={
+                  styles.heroStatusText
+                }
+              >
+                {soldOut
+                  ? "SOLD OUT"
+                  : "AVAILABLE"}
+              </Text>
+            </View>
           </View>
 
-          <View
-            style={[
-              styles.heroStatus,
-              soldOut
-                ? styles.soldOutStatus
-                : styles.availableStatus,
-            ]}
-          >
-            <Text style={styles.heroStatusText}>
-              {soldOut ? "SOLD OUT" : "AVAILABLE"}
+          <View>
+            <Text
+              style={styles.title}
+              numberOfLines={3}
+            >
+              {event.title}
             </Text>
+
+            <View
+              style={
+                styles.availabilityBadge
+              }
+            >
+              <View
+                style={[
+                  styles.statusDot,
+                  soldOut
+                    ? styles.redDot
+                    : styles.greenDot,
+                ]}
+              />
+
+              <Text
+                style={
+                  styles.availabilityText
+                }
+              >
+                {soldOut
+                  ? "No seats remaining"
+                  : `${event.availableSeats} seats available`}
+              </Text>
+            </View>
           </View>
         </View>
-
-        <Text style={styles.title}>
-          {event.title}
-        </Text>
-
-        <View style={styles.availabilityBadge}>
-          <View
-            style={[
-              styles.statusDot,
-              soldOut
-                ? styles.redDot
-                : styles.greenDot,
-            ]}
-          />
-
-          <Text style={styles.availabilityText}>
-            {soldOut
-              ? "No seats remaining"
-              : `${event.availableSeats} seats available`}
-          </Text>
-        </View>
-      </LinearGradient>
+      </View>
 
       <View style={styles.content}>
+        {/* EVENT INFORMATION */}
         <View style={styles.infoCard}>
           <InfoRow
             icon="calendar-outline"
@@ -299,9 +361,14 @@ export default function EventDetailsScreen() {
           />
         </View>
 
+        {/* DESCRIPTION */}
         <View style={styles.section}>
-          <View style={styles.sectionHeadingRow}>
-            <View style={styles.sectionIcon}>
+          <View
+            style={styles.sectionHeadingRow}
+          >
+            <View
+              style={styles.sectionIcon}
+            >
               <Ionicons
                 name="information-circle-outline"
                 size={21}
@@ -309,7 +376,9 @@ export default function EventDetailsScreen() {
               />
             </View>
 
-            <Text style={styles.sectionTitle}>
+            <Text
+              style={styles.sectionTitle}
+            >
               About this event
             </Text>
           </View>
@@ -319,10 +388,13 @@ export default function EventDetailsScreen() {
           </Text>
         </View>
 
+        {/* OWNER MANAGEMENT */}
         {isOwner ? (
           <View style={styles.ownerPanel}>
             <View style={styles.ownerHeader}>
-              <View style={styles.ownerIcon}>
+              <View
+                style={styles.ownerIcon}
+              >
                 <Ionicons
                   name="settings-outline"
                   size={21}
@@ -330,12 +402,18 @@ export default function EventDetailsScreen() {
                 />
               </View>
 
-              <View>
-                <Text style={styles.ownerTitle}>
+              <View style={styles.ownerText}>
+                <Text
+                  style={styles.ownerTitle}
+                >
                   Event Management
                 </Text>
 
-                <Text style={styles.ownerSubtitle}>
+                <Text
+                  style={
+                    styles.ownerSubtitle
+                  }
+                >
                   You created this event
                 </Text>
               </View>
@@ -364,7 +442,9 @@ export default function EventDetailsScreen() {
                   color="#2563EB"
                 />
 
-                <Text style={styles.editText}>
+                <Text
+                  style={styles.editText}
+                >
                   Edit
                 </Text>
               </Pressable>
@@ -391,7 +471,9 @@ export default function EventDetailsScreen() {
                     />
 
                     <Text
-                      style={styles.deleteText}
+                      style={
+                        styles.deleteText
+                      }
                     >
                       Delete
                     </Text>
@@ -402,6 +484,7 @@ export default function EventDetailsScreen() {
           </View>
         ) : null}
 
+        {/* BOOKING BUTTON */}
         <Pressable
           style={({ pressed }) => [
             styles.bookingButtonWrapper,
@@ -412,7 +495,8 @@ export default function EventDetailsScreen() {
           disabled={soldOut}
           onPress={() =>
             router.push({
-              pathname: "/bookings/create",
+              pathname:
+                "/bookings/create",
               params: {
                 eventId: event._id,
               },
@@ -422,23 +506,39 @@ export default function EventDetailsScreen() {
           <LinearGradient
             colors={
               !soldOut
-                ? ["#2563EB", "#4F46E5"]
-                : ["#94A3B8", "#64748B"]
+                ? [
+                    "#2563EB",
+                    "#4F46E5",
+                  ]
+                : [
+                    "#94A3B8",
+                    "#64748B",
+                  ]
             }
             style={styles.bookingGradient}
           >
-            <Ionicons
-              name={
-                !soldOut
-                  ? "ticket-outline"
-                  : "close-circle-outline"
-              }
-              size={23}
-              color="#FFFFFF"
-            />
+            <View
+              style={styles.bookingIcon}
+            >
+              <Ionicons
+                name={
+                  !soldOut
+                    ? "ticket-outline"
+                    : "close-circle-outline"
+                }
+                size={24}
+                color="#FFFFFF"
+              />
+            </View>
 
-            <View style={styles.bookingTextArea}>
-              <Text style={styles.bookingText}>
+            <View
+              style={
+                styles.bookingTextArea
+              }
+            >
+              <Text
+                style={styles.bookingText}
+              >
                 {!soldOut
                   ? "Book This Event"
                   : "Event Sold Out"}
@@ -446,7 +546,9 @@ export default function EventDetailsScreen() {
 
               {!soldOut && (
                 <Text
-                  style={styles.bookingSubtext}
+                  style={
+                    styles.bookingSubtext
+                  }
                 >
                   Reserve your seats now
                 </Text>
@@ -456,7 +558,7 @@ export default function EventDetailsScreen() {
             {!soldOut && (
               <Ionicons
                 name="arrow-forward"
-                size={21}
+                size={22}
                 color="#FFFFFF"
               />
             )}
@@ -493,7 +595,9 @@ function InfoRow({
         />
       </View>
 
-      <View style={styles.infoTextContainer}>
+      <View
+        style={styles.infoTextContainer}
+      >
         <Text style={styles.infoTitle}>
           {title}
         </Text>
@@ -539,10 +643,38 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
+  /*
+   * HERO
+   */
   hero: {
-    padding: 24,
-    paddingTop: 35,
-    paddingBottom: 35,
+    height: 320,
+    position: "relative",
+    overflow: "hidden",
+    backgroundColor: "#1D4ED8",
+  },
+
+  heroImage: {
+    width: "100%",
+    height: "100%",
+  },
+
+  heroPlaceholder: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+
+  heroContent: {
+    ...StyleSheet.absoluteFillObject,
+    paddingHorizontal: 23,
+    paddingTop: 28,
+    paddingBottom: 26,
+    justifyContent: "space-between",
   },
 
   heroTopRow: {
@@ -552,56 +684,68 @@ const styles = StyleSheet.create({
   },
 
   heroIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 19,
+    width: 53,
+    height: 53,
+    borderRadius: 17,
     backgroundColor:
-      "rgba(255,255,255,0.17)",
+      "rgba(15,23,42,0.35)",
+    borderWidth: 1,
+    borderColor:
+      "rgba(255,255,255,0.22)",
     alignItems: "center",
     justifyContent: "center",
   },
 
   heroStatus: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingHorizontal: 13,
+    paddingVertical: 8,
     borderRadius: 20,
   },
 
   availableStatus: {
     backgroundColor:
-      "rgba(22,163,74,0.90)",
+      "rgba(22,163,74,0.94)",
   },
 
   soldOutStatus: {
     backgroundColor:
-      "rgba(220,38,38,0.90)",
+      "rgba(220,38,38,0.94)",
   },
 
   heroStatusText: {
     color: "#FFFFFF",
     fontWeight: "900",
     fontSize: 11,
-    letterSpacing: 0.6,
+    letterSpacing: 0.7,
   },
 
   title: {
     color: "#FFFFFF",
     fontSize: 30,
     fontWeight: "900",
-    lineHeight: 37,
-    marginTop: 23,
+    lineHeight: 36,
+    textShadowColor:
+      "rgba(0,0,0,0.30)",
+    textShadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    textShadowRadius: 3,
   },
 
   availabilityBadge: {
-    marginTop: 18,
+    marginTop: 14,
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "flex-start",
     backgroundColor:
-      "rgba(255,255,255,0.15)",
+      "rgba(15,23,42,0.46)",
     paddingHorizontal: 13,
     paddingVertical: 8,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor:
+      "rgba(255,255,255,0.15)",
   },
 
   statusDot: {
@@ -621,10 +765,13 @@ const styles = StyleSheet.create({
 
   availabilityText: {
     color: "#FFFFFF",
-    fontWeight: "700",
+    fontWeight: "800",
     fontSize: 13,
   },
 
+  /*
+   * CONTENT
+   */
   content: {
     padding: 18,
   },
@@ -636,10 +783,14 @@ const styles = StyleSheet.create({
     marginBottom: 20,
 
     shadowColor: "#0F172A",
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.06,
     shadowRadius: 15,
+    shadowOffset: {
+      width: 0,
+      height: 5,
+    },
 
-    elevation: 2,
+    elevation: 3,
   },
 
   infoRow: {
@@ -683,11 +834,20 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
+  /*
+   * ABOUT
+   */
   section: {
     backgroundColor: "#FFFFFF",
     borderRadius: 22,
     padding: 20,
     marginBottom: 20,
+
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+
+    elevation: 2,
   },
 
   sectionHeadingRow: {
@@ -715,13 +875,23 @@ const styles = StyleSheet.create({
   description: {
     color: "#475569",
     lineHeight: 23,
+    fontSize: 14,
   },
 
+  /*
+   * OWNER PANEL
+   */
   ownerPanel: {
     backgroundColor: "#FFFFFF",
     borderRadius: 22,
     padding: 20,
     marginBottom: 20,
+
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+
+    elevation: 2,
   },
 
   ownerHeader: {
@@ -737,6 +907,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginRight: 11,
+  },
+
+  ownerText: {
+    flex: 1,
   },
 
   ownerTitle: {
@@ -792,32 +966,49 @@ const styles = StyleSheet.create({
     opacity: 0.72,
   },
 
+  /*
+   * BOOKING
+   */
   bookingButtonWrapper: {
     overflow: "hidden",
     borderRadius: 18,
 
     shadowColor: "#1D4ED8",
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
+    shadowOpacity: 0.22,
+    shadowRadius: 12,
     shadowOffset: {
       width: 0,
-      height: 5,
+      height: 6,
     },
 
-    elevation: 5,
+    elevation: 6,
   },
 
   bookingPressed: {
-    transform: [{ scale: 0.98 }],
+    transform: [
+      {
+        scale: 0.98,
+      },
+    ],
     opacity: 0.92,
   },
 
   bookingGradient: {
-    minHeight: 66,
+    minHeight: 70,
     flexDirection: "row",
     gap: 11,
     alignItems: "center",
-    paddingHorizontal: 19,
+    paddingHorizontal: 17,
+  },
+
+  bookingIcon: {
+    width: 43,
+    height: 43,
+    borderRadius: 13,
+    backgroundColor:
+      "rgba(255,255,255,0.16)",
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   bookingTextArea: {
@@ -836,6 +1027,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 
+  /*
+   * ERROR
+   */
   errorTitle: {
     marginTop: 16,
     fontSize: 20,
