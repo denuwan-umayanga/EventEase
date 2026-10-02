@@ -1,14 +1,27 @@
-const mongoose = require("mongoose");
-
 const Booking = require("../models/Booking");
 const Event = require("../models/Event");
 
 // CREATE BOOKING
 const createBooking = async (req, res) => {
   try {
-    const { eventId, numberOfSeats } = req.body;
+    // Admin accounts are for event management only
+    if (req.user.isAdmin === true) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Administrators cannot create event bookings",
+      });
+    }
 
-    if (!eventId || !numberOfSeats) {
+    const {
+      eventId,
+      numberOfSeats,
+    } = req.body;
+
+    if (
+      !eventId ||
+      !numberOfSeats
+    ) {
       return res.status(400).json({
         success: false,
         message:
@@ -16,14 +29,8 @@ const createBooking = async (req, res) => {
       });
     }
 
-    if (!mongoose.Types.ObjectId.isValid(eventId)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid event ID",
-      });
-    }
-
-    const seats = Number(numberOfSeats);
+    const seats =
+      Number(numberOfSeats);
 
     if (
       Number.isNaN(seats) ||
@@ -37,35 +44,53 @@ const createBooking = async (req, res) => {
       });
     }
 
-    const event = await Event.findById(eventId);
+    const event =
+      await Event.findById(
+        eventId
+      );
 
     if (!event) {
       return res.status(404).json({
         success: false,
-        message: "Event not found",
+        message:
+          "Event not found",
       });
     }
 
-    if (new Date(event.eventDate) <= new Date()) {
+    if (
+      new Date(
+        event.eventDate
+      ) <= new Date()
+    ) {
       return res.status(400).json({
         success: false,
         message:
-          "Bookings are not allowed for past events",
+          "This event has already started or ended",
       });
     }
 
-    if (event.availableSeats < seats) {
+    if (
+      event.availableSeats <
+      seats
+    ) {
       return res.status(400).json({
         success: false,
-        message: `Only ${event.availableSeats} seats are available`,
+        message:
+          `Only ${event.availableSeats} seat(s) are available`,
       });
     }
 
-    const existingBooking = await Booking.findOne({
-      userId: req.user._id,
-      eventId,
-      status: "Confirmed",
-    });
+    const existingBooking =
+      await Booking.findOne({
+        userId:
+          req.user._id,
+
+        eventId:
+          event._id,
+
+        status:
+          "Confirmed",
+      });
 
     if (existingBooking) {
       return res.status(400).json({
@@ -75,29 +100,44 @@ const createBooking = async (req, res) => {
       });
     }
 
-    const booking = await Booking.create({
-      userId: req.user._id,
-      eventId,
-      numberOfSeats: seats,
-      status: "Confirmed",
-    });
+    const booking =
+      await Booking.create({
+        userId:
+          req.user._id,
 
-    event.availableSeats -= seats;
+        eventId:
+          event._id,
+
+        numberOfSeats:
+          seats,
+
+        status:
+          "Confirmed",
+      });
+
+    event.availableSeats -=
+      seats;
 
     await event.save();
 
     const populatedBooking =
-      await Booking.findById(booking._id)
+      await Booking.findById(
+        booking._id
+      )
         .populate(
-          "eventId",
-          "title description location eventDate capacity availableSeats image"
+          "eventId"
         )
-        .populate("userId", "name email");
+        .populate(
+          "userId",
+          "name email"
+        );
 
     return res.status(201).json({
       success: true,
-      message: "Booking confirmed successfully",
-      booking: populatedBooking,
+      message:
+        "Booking created successfully",
+      booking:
+        populatedBooking,
     });
   } catch (error) {
     console.error(
@@ -113,21 +153,39 @@ const createBooking = async (req, res) => {
   }
 };
 
-// GET CURRENT USER BOOKINGS
-const getMyBookings = async (req, res) => {
+// GET MY BOOKINGS
+const getMyBookings = async (
+  req,
+  res
+) => {
   try {
-    const bookings = await Booking.find({
-      userId: req.user._id,
-    })
-      .populate(
-        "eventId",
-        "title description location eventDate capacity availableSeats image"
-      )
-      .sort({ createdAt: -1 });
+    if (
+      req.user.isAdmin ===
+      true
+    ) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Booking history is available to normal users only",
+      });
+    }
+
+    const bookings =
+      await Booking.find({
+        userId:
+          req.user._id,
+      })
+        .populate(
+          "eventId"
+        )
+        .sort({
+          createdAt: -1,
+        });
 
     return res.status(200).json({
       success: true,
-      count: bookings.length,
+      count:
+        bookings.length,
       bookings,
     });
   } catch (error) {
@@ -145,37 +203,28 @@ const getMyBookings = async (req, res) => {
 };
 
 // GET ONE BOOKING
-const getBookingById = async (req, res) => {
+const getBookingById = async (
+  req,
+  res
+) => {
   try {
-    if (
-      !mongoose.Types.ObjectId.isValid(
+    const booking =
+      await Booking.findById(
         req.params.id
-      )
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid booking ID",
-      });
-    }
-
-    const booking = await Booking.findById(
-      req.params.id
-    )
-      .populate(
-        "eventId",
-        "title description location eventDate capacity availableSeats image"
-      )
-      .populate("userId", "name email");
+      ).populate(
+        "eventId"
+      );
 
     if (!booking) {
       return res.status(404).json({
         success: false,
-        message: "Booking not found",
+        message:
+          "Booking not found",
       });
     }
 
     if (
-      booking.userId._id.toString() !==
+      booking.userId.toString() !==
       req.user._id.toString()
     ) {
       return res.status(403).json({
@@ -204,18 +253,21 @@ const getBookingById = async (req, res) => {
 };
 
 // UPDATE NUMBER OF SEATS
-const updateBooking = async (req, res) => {
+const updateBooking = async (
+  req,
+  res
+) => {
   try {
-    const { numberOfSeats } = req.body;
-
-    const booking = await Booking.findById(
-      req.params.id
-    );
+    const booking =
+      await Booking.findById(
+        req.params.id
+      );
 
     if (!booking) {
       return res.status(404).json({
         success: false,
-        message: "Booking not found",
+        message:
+          "Booking not found",
       });
     }
 
@@ -230,19 +282,31 @@ const updateBooking = async (req, res) => {
       });
     }
 
-    if (booking.status === "Cancelled") {
+    if (
+      booking.status !==
+      "Confirmed"
+    ) {
       return res.status(400).json({
         success: false,
         message:
-          "Cancelled bookings cannot be updated",
+          "Only confirmed bookings can be updated",
       });
     }
 
-    const newSeats = Number(numberOfSeats);
+    const {
+      numberOfSeats,
+    } = req.body;
+
+    const newSeats =
+      Number(numberOfSeats);
 
     if (
-      Number.isNaN(newSeats) ||
-      !Number.isInteger(newSeats) ||
+      Number.isNaN(
+        newSeats
+      ) ||
+      !Number.isInteger(
+        newSeats
+      ) ||
       newSeats < 1
     ) {
       return res.status(400).json({
@@ -252,48 +316,57 @@ const updateBooking = async (req, res) => {
       });
     }
 
-    const event = await Event.findById(
-      booking.eventId
-    );
+    const event =
+      await Event.findById(
+        booking.eventId
+      );
 
     if (!event) {
       return res.status(404).json({
         success: false,
-        message: "Associated event not found",
+        message:
+          "Associated event not found",
       });
     }
 
-    const difference =
-      newSeats - booking.numberOfSeats;
+    const seatDifference =
+      newSeats -
+      booking.numberOfSeats;
 
     if (
-      difference > 0 &&
-      event.availableSeats < difference
+      seatDifference > 0 &&
+      event.availableSeats <
+        seatDifference
     ) {
       return res.status(400).json({
         success: false,
-        message: `Only ${event.availableSeats} additional seats are available`,
+        message:
+          `Only ${event.availableSeats} additional seat(s) are available`,
       });
     }
 
-    event.availableSeats -= difference;
+    event.availableSeats -=
+      seatDifference;
 
-    booking.numberOfSeats = newSeats;
+    booking.numberOfSeats =
+      newSeats;
 
     await event.save();
     await booking.save();
 
     const updatedBooking =
-      await Booking.findById(booking._id)
-        .populate(
-          "eventId",
-          "title description location eventDate capacity availableSeats image"
-        );
+      await Booking.findById(
+        booking._id
+      ).populate(
+        "eventId"
+      );
 
     return res.status(200).json({
       success: true,
-      message: "Booking updated successfully",
-      booking: updatedBooking,
+      message:
+        "Booking updated successfully",
+      booking:
+        updatedBooking,
     });
   } catch (error) {
     console.error(
@@ -310,16 +383,21 @@ const updateBooking = async (req, res) => {
 };
 
 // CANCEL BOOKING
-const cancelBooking = async (req, res) => {
+const cancelBooking = async (
+  req,
+  res
+) => {
   try {
-    const booking = await Booking.findById(
-      req.params.id
-    );
+    const booking =
+      await Booking.findById(
+        req.params.id
+      );
 
     if (!booking) {
       return res.status(404).json({
         success: false,
-        message: "Booking not found",
+        message:
+          "Booking not found",
       });
     }
 
@@ -334,48 +412,47 @@ const cancelBooking = async (req, res) => {
       });
     }
 
-    if (booking.status === "Cancelled") {
+    if (
+      booking.status ===
+      "Cancelled"
+    ) {
       return res.status(400).json({
         success: false,
         message:
-          "Booking is already cancelled",
+          "This booking is already cancelled",
       });
     }
 
-    const event = await Event.findById(
-      booking.eventId
-    );
+    const event =
+      await Event.findById(
+        booking.eventId
+      );
 
     if (event) {
       event.availableSeats +=
         booking.numberOfSeats;
 
-      if (
-        event.availableSeats >
-        event.capacity
-      ) {
-        event.availableSeats =
-          event.capacity;
-      }
-
       await event.save();
     }
 
-    booking.status = "Cancelled";
+    booking.status =
+      "Cancelled";
 
     await booking.save();
 
     const cancelledBooking =
-      await Booking.findById(booking._id)
-        .populate(
-          "eventId",
-          "title location eventDate capacity availableSeats"
-        );
+      await Booking.findById(
+        booking._id
+      ).populate(
+        "eventId"
+      );
 
     return res.status(200).json({
       success: true,
-      message: "Booking cancelled successfully",
-      booking: cancelledBooking,
+      message:
+        "Booking cancelled successfully",
+      booking:
+        cancelledBooking,
     });
   } catch (error) {
     console.error(
@@ -392,16 +469,21 @@ const cancelBooking = async (req, res) => {
 };
 
 // DELETE BOOKING
-const deleteBooking = async (req, res) => {
+const deleteBooking = async (
+  req,
+  res
+) => {
   try {
-    const booking = await Booking.findById(
-      req.params.id
-    );
+    const booking =
+      await Booking.findById(
+        req.params.id
+      );
 
     if (!booking) {
       return res.status(404).json({
         success: false,
-        message: "Booking not found",
+        message:
+          "Booking not found",
       });
     }
 
@@ -416,22 +498,20 @@ const deleteBooking = async (req, res) => {
       });
     }
 
-    if (booking.status === "Confirmed") {
-      const event = await Event.findById(
-        booking.eventId
-      );
+    // If a confirmed booking is deleted,
+    // release its seats first.
+    if (
+      booking.status ===
+      "Confirmed"
+    ) {
+      const event =
+        await Event.findById(
+          booking.eventId
+        );
 
       if (event) {
         event.availableSeats +=
           booking.numberOfSeats;
-
-        if (
-          event.availableSeats >
-          event.capacity
-        ) {
-          event.availableSeats =
-            event.capacity;
-        }
 
         await event.save();
       }
@@ -441,7 +521,8 @@ const deleteBooking = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Booking deleted successfully",
+      message:
+        "Booking deleted successfully",
     });
   } catch (error) {
     console.error(
