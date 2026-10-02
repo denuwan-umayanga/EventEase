@@ -1,4 +1,7 @@
+const mongoose = require("mongoose");
+
 const Event = require("../models/Event");
+const Booking = require("../models/Booking");
 
 const ALLOWED_CATEGORIES = [
   "Music",
@@ -32,7 +35,7 @@ const createEvent = async (req, res) => {
       return res.status(400).json({
         success: false,
         message:
-          "Title, description, category, location, event date and capacity are required",
+          "Please provide all required event details",
       });
     }
 
@@ -43,7 +46,8 @@ const createEvent = async (req, res) => {
     ) {
       return res.status(400).json({
         success: false,
-        message: "Invalid event category",
+        message:
+          "Invalid event category",
       });
     }
 
@@ -51,13 +55,18 @@ const createEvent = async (req, res) => {
       Number(capacity);
 
     if (
-      Number.isNaN(capacityNumber) ||
+      Number.isNaN(
+        capacityNumber
+      ) ||
+      !Number.isInteger(
+        capacityNumber
+      ) ||
       capacityNumber < 1
     ) {
       return res.status(400).json({
         success: false,
         message:
-          "Capacity must be at least 1",
+          "Capacity must be a whole number greater than zero",
       });
     }
 
@@ -71,7 +80,8 @@ const createEvent = async (req, res) => {
     ) {
       return res.status(400).json({
         success: false,
-        message: "Invalid event date",
+        message:
+          "Invalid event date",
       });
     }
 
@@ -85,30 +95,52 @@ const createEvent = async (req, res) => {
       });
     }
 
-    const imagePath = req.file
+    const image = req.file
       ? `/uploads/${req.file.filename}`
       : "";
 
     const event =
       await Event.create({
-        title: title.trim(),
+        title:
+          title.trim(),
+
         description:
           description.trim(),
+
         category,
-        location: location.trim(),
-        eventDate: parsedDate,
-        capacity: capacityNumber,
+
+        location:
+          location.trim(),
+
+        eventDate:
+          parsedDate,
+
+        capacity:
+          capacityNumber,
+
         availableSeats:
           capacityNumber,
-        image: imagePath,
-        createdBy: req.user._id,
+
+        image,
+
+        createdBy:
+          req.user._id,
       });
+
+    const populatedEvent =
+      await Event.findById(
+        event._id
+      ).populate(
+        "createdBy",
+        "name email"
+      );
 
     return res.status(201).json({
       success: true,
       message:
         "Event created successfully",
-      event,
+      event:
+        populatedEvent,
     });
   } catch (error) {
     console.error(
@@ -142,7 +174,8 @@ const getEvents = async (
 
     return res.status(200).json({
       success: true,
-      count: events.length,
+      count:
+        events.length,
       events,
     });
   } catch (error) {
@@ -165,6 +198,18 @@ const getEventById = async (
   res
 ) => {
   try {
+    if (
+      !mongoose.isValidObjectId(
+        req.params.id
+      )
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Invalid event ID",
+      });
+    }
+
     const event =
       await Event.findById(
         req.params.id
@@ -186,10 +231,15 @@ const getEventById = async (
       event,
     });
   } catch (error) {
-    return res.status(400).json({
+    console.error(
+      "Get event error:",
+      error
+    );
+
+    return res.status(500).json({
       success: false,
       message:
-        "Invalid event ID",
+        "Server error while fetching event",
     });
   }
 };
@@ -200,6 +250,18 @@ const updateEvent = async (
   res
 ) => {
   try {
+    if (
+      !mongoose.isValidObjectId(
+        req.params.id
+      )
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Invalid event ID",
+      });
+    }
+
     const event =
       await Event.findById(
         req.params.id
@@ -223,42 +285,6 @@ const updateEvent = async (
     } = req.body;
 
     if (
-      title !== undefined
-    ) {
-      if (!title.trim()) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message:
-              "Event title cannot be empty",
-          });
-      }
-
-      event.title =
-        title.trim();
-    }
-
-    if (
-      description !== undefined
-    ) {
-      if (
-        !description.trim()
-      ) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message:
-              "Event description cannot be empty",
-          });
-      }
-
-      event.description =
-        description.trim();
-    }
-
-    if (
       category !== undefined
     ) {
       if (
@@ -266,13 +292,11 @@ const updateEvent = async (
           category
         )
       ) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message:
-              "Invalid event category",
-          });
+        return res.status(400).json({
+          success: false,
+          message:
+            "Invalid event category",
+        });
       }
 
       event.category =
@@ -280,63 +304,8 @@ const updateEvent = async (
     }
 
     if (
-      location !== undefined
-    ) {
-      if (
-        !location.trim()
-      ) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message:
-              "Event location cannot be empty",
-          });
-      }
-
-      event.location =
-        location.trim();
-    }
-
-    if (
-      eventDate !== undefined
-    ) {
-      const parsedDate =
-        new Date(eventDate);
-
-      if (
-        Number.isNaN(
-          parsedDate.getTime()
-        )
-      ) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message:
-              "Invalid event date",
-          });
-      }
-
-      if (
-        parsedDate <=
-        new Date()
-      ) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message:
-              "Event date must be in the future",
-          });
-      }
-
-      event.eventDate =
-        parsedDate;
-    }
-
-    if (
-      capacity !== undefined
+      capacity !== undefined &&
+      capacity !== ""
     ) {
       const newCapacity =
         Number(capacity);
@@ -345,15 +314,16 @@ const updateEvent = async (
         Number.isNaN(
           newCapacity
         ) ||
+        !Number.isInteger(
+          newCapacity
+        ) ||
         newCapacity < 1
       ) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message:
-              "Capacity must be at least 1",
-          });
+        return res.status(400).json({
+          success: false,
+          message:
+            "Capacity must be a whole number greater than zero",
+        });
       }
 
       const bookedSeats =
@@ -364,13 +334,11 @@ const updateEvent = async (
         newCapacity <
         bookedSeats
       ) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message:
-              "Capacity cannot be lower than already booked seats",
-          });
+        return res.status(400).json({
+          success: false,
+          message:
+            `Capacity cannot be lower than the ${bookedSeats} already booked seat(s)`,
+        });
       }
 
       event.capacity =
@@ -381,19 +349,111 @@ const updateEvent = async (
         bookedSeats;
     }
 
+    if (
+      eventDate !== undefined &&
+      eventDate !== ""
+    ) {
+      const parsedDate =
+        new Date(eventDate);
+
+      if (
+        Number.isNaN(
+          parsedDate.getTime()
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Invalid event date",
+        });
+      }
+
+      if (
+        parsedDate <=
+        new Date()
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Event date must be in the future",
+        });
+      }
+
+      event.eventDate =
+        parsedDate;
+    }
+
+    if (
+      title !== undefined
+    ) {
+      if (!title.trim()) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Event title cannot be empty",
+        });
+      }
+
+      event.title =
+        title.trim();
+    }
+
+    if (
+      description !==
+      undefined
+    ) {
+      if (
+        !description.trim()
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Event description cannot be empty",
+        });
+      }
+
+      event.description =
+        description.trim();
+    }
+
+    if (
+      location !== undefined
+    ) {
+      if (
+        !location.trim()
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Event location cannot be empty",
+        });
+      }
+
+      event.location =
+        location.trim();
+    }
+
     if (req.file) {
       event.image =
         `/uploads/${req.file.filename}`;
     }
 
+    await event.save();
+
     const updatedEvent =
-      await event.save();
+      await Event.findById(
+        event._id
+      ).populate(
+        "createdBy",
+        "name email"
+      );
 
     return res.status(200).json({
       success: true,
       message:
         "Event updated successfully",
-      event: updatedEvent,
+      event:
+        updatedEvent,
     });
   } catch (error) {
     console.error(
@@ -415,6 +475,18 @@ const deleteEvent = async (
   res
 ) => {
   try {
+    if (
+      !mongoose.isValidObjectId(
+        req.params.id
+      )
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Invalid event ID",
+      });
+    }
+
     const event =
       await Event.findById(
         req.params.id
@@ -427,6 +499,43 @@ const deleteEvent = async (
           "Event not found",
       });
     }
+
+    /*
+      Do not delete an event while users
+      still have confirmed reservations.
+    */
+    const activeBooking =
+      await Booking.findOne({
+        eventId:
+          event._id,
+
+        status:
+          "Confirmed",
+      });
+
+    if (activeBooking) {
+      return res.status(409).json({
+        success: false,
+        message:
+          "This event cannot be deleted because it has confirmed bookings",
+      });
+    }
+
+    /*
+      At this point there are no active
+      bookings.
+
+      Remove old cancelled booking records
+      so they do not reference an event
+      that is about to be deleted.
+    */
+    await Booking.deleteMany({
+      eventId:
+        event._id,
+
+      status:
+        "Cancelled",
+    });
 
     await event.deleteOne();
 
