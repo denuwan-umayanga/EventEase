@@ -1,4 +1,5 @@
 import { Stack } from "expo-router";
+
 import { AuthProvider } from "../src/context/AuthContext";
 
 export default function RootLayout() {
@@ -7,23 +8,32 @@ export default function RootLayout() {
       <Stack
         screenOptions={{
           headerStyle: {
-            backgroundColor: "#2563EB",
+            backgroundColor: "#FFFFFF",
           },
-          headerTintColor: "#FFFFFF",
+
+          headerTintColor: "#0F172A",
+
           headerTitleStyle: {
-            fontWeight: "bold",
+            fontWeight: "800",
+          },
+
+          headerShadowVisible: false,
+
+          contentStyle: {
+            backgroundColor: "#F8FAFC",
           },
         }}
       >
         <Stack.Screen
           name="index"
-          options={{ headerShown: false }}
+          options={{
+            headerShown: false,
+          }}
         />
 
         <Stack.Screen
           name="login"
           options={{
-            title: "Login",
             headerShown: false,
           }}
         />
@@ -31,7 +41,6 @@ export default function RootLayout() {
         <Stack.Screen
           name="register"
           options={{
-            title: "Register",
             headerShown: false,
           }}
         />
@@ -39,8 +48,29 @@ export default function RootLayout() {
         <Stack.Screen
           name="home"
           options={{
-            title: "EventEase",
-            headerBackVisible: false,
+            headerShown: false,
+          }}
+        />
+
+        <Stack.Screen
+          name="events/create"
+          options={{
+            title: "Create Event",
+            presentation: "card",
+          }}
+        />
+
+        <Stack.Screen
+          name="events/[id]"
+          options={{
+            title: "Event Details",
+          }}
+        />
+
+        <Stack.Screen
+          name="events/edit/[id]"
+          options={{
+            title: "Edit Event",
           }}
         />
       </Stack>
