@@ -30,6 +30,7 @@ export default function HomeScreen() {
   );
 
   const [loading, setLoading] = useState(true);
+
   const [refreshing, setRefreshing] =
     useState(false);
 
@@ -53,7 +54,8 @@ export default function HomeScreen() {
 
       if (!response.ok) {
         setError(
-          data.message || "Unable to load events."
+          data.message ||
+            "Unable to load events."
         );
 
         return;
@@ -93,9 +95,10 @@ export default function HomeScreen() {
         style={styles.hero}
       >
         <View style={styles.topRow}>
-          <View>
+          <View style={styles.greetingContainer}>
             <Text style={styles.greeting}>
-              Hello, {user?.name?.split(" ")[0]} 👋
+              Hello,{" "}
+              {user?.name?.split(" ")[0]} 👋
             </Text>
 
             <Text style={styles.heroSubtitle}>
@@ -104,7 +107,10 @@ export default function HomeScreen() {
           </View>
 
           <Pressable
-            style={styles.profileButton}
+            style={({ pressed }) => [
+              styles.profileButton,
+              pressed && styles.buttonPressed,
+            ]}
             onPress={handleLogout}
           >
             <Ionicons
@@ -126,14 +132,56 @@ export default function HomeScreen() {
             </Text>
           </View>
 
-          <Ionicons
-            name="sparkles"
-            size={30}
-            color="#FFFFFF"
-          />
+          <View style={styles.sparkleContainer}>
+            <Ionicons
+              name="sparkles"
+              size={30}
+              color="#FFFFFF"
+            />
+          </View>
         </View>
       </LinearGradient>
 
+      {/* Quick Action */}
+      <View style={styles.quickActions}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.quickActionCard,
+            pressed && styles.quickActionPressed,
+          ]}
+          onPress={() =>
+            router.push("/bookings" as any)
+          }
+        >
+          <View style={styles.quickIcon}>
+            <Ionicons
+              name="ticket-outline"
+              size={23}
+              color="#4F46E5"
+            />
+          </View>
+
+          <View style={styles.quickText}>
+            <Text style={styles.quickTitle}>
+              My Bookings
+            </Text>
+
+            <Text style={styles.quickSubtitle}>
+              View and manage your reservations
+            </Text>
+          </View>
+
+          <View style={styles.arrowContainer}>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color="#64748B"
+            />
+          </View>
+        </Pressable>
+      </View>
+
+      {/* Events Heading */}
       <View style={styles.sectionHeader}>
         <View>
           <Text style={styles.sectionTitle}>
@@ -144,6 +192,12 @@ export default function HomeScreen() {
             Browse events happening near you
           </Text>
         </View>
+
+        <View style={styles.eventCountBadge}>
+          <Text style={styles.eventCountText}>
+            {events.length}
+          </Text>
+        </View>
       </View>
     </>
   );
@@ -151,6 +205,14 @@ export default function HomeScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.center}>
+        <View style={styles.loadingIcon}>
+          <Ionicons
+            name="calendar-outline"
+            size={28}
+            color="#2563EB"
+          />
+        </View>
+
         <ActivityIndicator
           size="large"
           color="#2563EB"
@@ -169,35 +231,45 @@ export default function HomeScreen() {
         data={events}
         keyExtractor={(item) => item._id}
         renderItem={({ item }) => (
-          <EventCard
-            event={item}
-            onPress={() =>
-              router.push({
-                pathname: "/events/[id]",
-                params: {
-                  id: item._id,
-                },
-              })
-            }
-          />
+          <View style={styles.eventCardWrapper}>
+            <EventCard
+              event={item}
+              onPress={() =>
+                router.push({
+                  pathname: "/events/[id]",
+                  params: {
+                    id: item._id,
+                  },
+                })
+              }
+            />
+          </View>
         )}
         ListHeaderComponent={renderHeader}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={
+          styles.listContent
+        }
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
+            tintColor="#2563EB"
           />
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             {error ? (
               <>
-                <View style={styles.emptyIcon}>
+                <View
+                  style={[
+                    styles.emptyIcon,
+                    styles.errorIconBackground,
+                  ]}
+                >
                   <Ionicons
                     name="cloud-offline-outline"
-                    size={38}
+                    size={40}
                     color="#DC2626"
                   />
                 </View>
@@ -211,11 +283,25 @@ export default function HomeScreen() {
                 </Text>
 
                 <Pressable
-                  style={styles.retryButton}
-                  onPress={() => loadEvents()}
+                  style={({ pressed }) => [
+                    styles.retryButton,
+                    pressed &&
+                      styles.buttonPressed,
+                  ]}
+                  onPress={() =>
+                    loadEvents()
+                  }
                 >
+                  <Ionicons
+                    name="refresh"
+                    size={18}
+                    color="#FFFFFF"
+                  />
+
                   <Text
-                    style={styles.retryButtonText}
+                    style={
+                      styles.retryButtonText
+                    }
                   >
                     Try Again
                   </Text>
@@ -223,7 +309,9 @@ export default function HomeScreen() {
               </>
             ) : (
               <>
-                <View style={styles.emptyIcon}>
+                <View
+                  style={styles.emptyIcon}
+                >
                   <Ionicons
                     name="calendar-outline"
                     size={42}
@@ -236,17 +324,47 @@ export default function HomeScreen() {
                 </Text>
 
                 <Text style={styles.emptyText}>
-                  Create the first event and start
-                  bringing people together.
+                  Create the first event and
+                  start bringing people
+                  together.
                 </Text>
+
+                <Pressable
+                  style={
+                    styles.emptyCreateButton
+                  }
+                  onPress={() =>
+                    router.push(
+                      "/events/create"
+                    )
+                  }
+                >
+                  <Ionicons
+                    name="add-circle-outline"
+                    size={19}
+                    color="#2563EB"
+                  />
+
+                  <Text
+                    style={
+                      styles.emptyCreateText
+                    }
+                  >
+                    Create Event
+                  </Text>
+                </Pressable>
               </>
             )}
           </View>
         }
       />
 
+      {/* Floating Create Button */}
       <Pressable
-        style={styles.fab}
+        style={({ pressed }) => [
+          styles.fab,
+          pressed && styles.fabPressed,
+        ]}
         onPress={() =>
           router.push("/events/create")
         }
@@ -281,11 +399,24 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#F8FAFC",
+    paddingHorizontal: 30,
+  },
+
+  loadingIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: "#EFF6FF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 18,
   },
 
   loadingText: {
     marginTop: 14,
     color: "#64748B",
+    fontSize: 14,
+    fontWeight: "600",
   },
 
   listContent: {
@@ -294,8 +425,8 @@ const styles = StyleSheet.create({
 
   hero: {
     paddingHorizontal: 22,
-    paddingTop: 22,
-    paddingBottom: 28,
+    paddingTop: 24,
+    paddingBottom: 29,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
   },
@@ -306,31 +437,43 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
+  greetingContainer: {
+    flex: 1,
+    paddingRight: 15,
+  },
+
   greeting: {
     color: "#FFFFFF",
     fontSize: 25,
-    fontWeight: "800",
+    fontWeight: "900",
   },
 
   heroSubtitle: {
     color: "#DBEAFE",
-    marginTop: 4,
+    marginTop: 5,
     fontSize: 14,
+    fontWeight: "500",
   },
 
   profileButton: {
-    width: 45,
-    height: 45,
+    width: 46,
+    height: 46,
     borderRadius: 15,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.15)",
+    backgroundColor:
+      "rgba(255,255,255,0.16)",
+  },
+
+  buttonPressed: {
+    opacity: 0.75,
   },
 
   heroStat: {
     marginTop: 26,
-    backgroundColor: "rgba(255,255,255,0.14)",
-    borderRadius: 18,
+    backgroundColor:
+      "rgba(255,255,255,0.14)",
+    borderRadius: 19,
     padding: 17,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -340,40 +483,138 @@ const styles = StyleSheet.create({
   heroStatNumber: {
     color: "#FFFFFF",
     fontWeight: "900",
-    fontSize: 28,
+    fontSize: 30,
   },
 
   heroStatLabel: {
     color: "#DBEAFE",
     marginTop: 2,
+    fontWeight: "600",
+  },
+
+  sparkleContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 15,
+    backgroundColor:
+      "rgba(255,255,255,0.12)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  quickActions: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+
+  quickActionCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 15,
+    flexDirection: "row",
+    alignItems: "center",
+
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: {
+      width: 0,
+      height: 5,
+    },
+
+    elevation: 3,
+  },
+
+  quickActionPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.99 }],
+  },
+
+  quickIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 15,
+    backgroundColor: "#EEF2FF",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  quickText: {
+    flex: 1,
+    marginLeft: 13,
+  },
+
+  quickTitle: {
+    fontWeight: "900",
+    color: "#0F172A",
+    fontSize: 16,
+  },
+
+  quickSubtitle: {
+    color: "#64748B",
+    marginTop: 3,
+    fontSize: 12,
+    lineHeight: 17,
+  },
+
+  arrowContainer: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    backgroundColor: "#F8FAFC",
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   sectionHeader: {
     paddingHorizontal: 20,
-    paddingTop: 27,
+    paddingTop: 28,
     paddingBottom: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
 
   sectionTitle: {
     fontSize: 23,
     color: "#0F172A",
-    fontWeight: "800",
+    fontWeight: "900",
   },
 
   sectionSubtitle: {
     color: "#64748B",
-    marginTop: 3,
+    marginTop: 4,
+    fontSize: 13,
+  },
+
+  eventCountBadge: {
+    minWidth: 36,
+    height: 36,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    backgroundColor: "#EFF6FF",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  eventCountText: {
+    color: "#2563EB",
+    fontWeight: "900",
+  },
+
+  eventCardWrapper: {
+    paddingHorizontal: 20,
   },
 
   emptyContainer: {
     alignItems: "center",
     paddingHorizontal: 35,
-    paddingTop: 60,
+    paddingTop: 55,
   },
 
   emptyIcon: {
-    width: 85,
-    height: 85,
+    width: 86,
+    height: 86,
     borderRadius: 28,
     alignItems: "center",
     justifyContent: "center",
@@ -381,9 +622,13 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
 
+  errorIconBackground: {
+    backgroundColor: "#FEF2F2",
+  },
+
   emptyTitle: {
     fontSize: 21,
-    fontWeight: "800",
+    fontWeight: "900",
     color: "#0F172A",
   },
 
@@ -397,14 +642,35 @@ const styles = StyleSheet.create({
   retryButton: {
     marginTop: 20,
     backgroundColor: "#2563EB",
-    paddingHorizontal: 23,
+    paddingHorizontal: 22,
     paddingVertical: 12,
     borderRadius: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
   },
 
   retryButtonText: {
     color: "#FFFFFF",
-    fontWeight: "700",
+    fontWeight: "800",
+  },
+
+  emptyCreateButton: {
+    marginTop: 20,
+    paddingHorizontal: 19,
+    paddingVertical: 11,
+    borderRadius: 13,
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+    backgroundColor: "#EFF6FF",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+  },
+
+  emptyCreateText: {
+    color: "#2563EB",
+    fontWeight: "800",
   },
 
   fab: {
@@ -413,18 +679,23 @@ const styles = StyleSheet.create({
     bottom: 24,
 
     shadowColor: "#1D4ED8",
-    shadowOpacity: 0.28,
-    shadowRadius: 10,
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
     shadowOffset: {
       width: 0,
-      height: 5,
+      height: 6,
     },
 
-    elevation: 8,
+    elevation: 9,
+  },
+
+  fabPressed: {
+    transform: [{ scale: 0.96 }],
+    opacity: 0.92,
   },
 
   fabGradient: {
-    height: 56,
+    height: 57,
     paddingHorizontal: 19,
     borderRadius: 18,
     flexDirection: "row",
@@ -434,7 +705,7 @@ const styles = StyleSheet.create({
 
   fabText: {
     color: "#FFFFFF",
-    fontWeight: "800",
+    fontWeight: "900",
     fontSize: 15,
   },
 });

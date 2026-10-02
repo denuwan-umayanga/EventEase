@@ -24,6 +24,7 @@ export default function RootLayout() {
           },
         }}
       >
+        {/* Authentication */}
         <Stack.Screen
           name="index"
           options={{
@@ -45,6 +46,7 @@ export default function RootLayout() {
           }}
         />
 
+        {/* Main Home */}
         <Stack.Screen
           name="home"
           options={{
@@ -52,6 +54,7 @@ export default function RootLayout() {
           }}
         />
 
+        {/* Events */}
         <Stack.Screen
           name="events/create"
           options={{
@@ -71,6 +74,36 @@ export default function RootLayout() {
           name="events/edit/[id]"
           options={{
             title: "Edit Event",
+          }}
+        />
+
+        {/* Bookings */}
+        <Stack.Screen
+          name="bookings/index"
+          options={{
+            title: "My Bookings",
+          }}
+        />
+
+        <Stack.Screen
+          name="bookings/create"
+          options={{
+            title: "Book Event",
+            presentation: "card",
+          }}
+        />
+
+        <Stack.Screen
+          name="bookings/[id]"
+          options={{
+            title: "Booking Details",
+          }}
+        />
+
+        <Stack.Screen
+          name="bookings/edit/[id]"
+          options={{
+            title: "Change Seats",
           }}
         />
       </Stack>
