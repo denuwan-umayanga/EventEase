@@ -18,11 +18,10 @@ import {
   View,
 } from "react-native";
 
+import RoleGuard from "../../src/components/RoleGuard";
 import { API_URL } from "../../src/config/api";
 import { useAuth } from "../../src/context/AuthContext";
-import {
-  EventCategory,
-} from "../../src/types/Event";
+import { EventCategory } from "../../src/types/Event";
 
 type SelectedImage = {
   uri: string;
@@ -61,13 +60,24 @@ const categories: {
 ];
 
 export default function CreateEventScreen() {
+  return (
+    <RoleGuard allow="admin">
+      <CreateEventContent />
+    </RoleGuard>
+  );
+}
+
+function CreateEventContent() {
   const { token, user } = useAuth();
 
   const [title, setTitle] = useState("");
+
   const [description, setDescription] =
     useState("");
+
   const [location, setLocation] =
     useState("");
+
   const [capacity, setCapacity] =
     useState("");
 
@@ -237,10 +247,13 @@ export default function CreateEventScreen() {
         Number.isNaN(
           capacityNumber
         ) ||
+        !Number.isInteger(
+          capacityNumber
+        ) ||
         capacityNumber < 1
       ) {
         setError(
-          "Capacity must be greater than zero."
+          "Capacity must be a whole number greater than zero."
         );
 
         return;
@@ -289,16 +302,15 @@ export default function CreateEventScreen() {
 
         formData.append(
           "capacity",
-          String(
-            capacityNumber
-          )
+          String(capacityNumber)
         );
 
         if (image) {
           const extension =
             image.fileName
               ?.split(".")
-              .pop() || "jpg";
+              .pop() ||
+            "jpg";
 
           const fileName =
             image.fileName ||
@@ -346,12 +358,11 @@ export default function CreateEventScreen() {
         }
 
         Alert.alert(
-          "Event Created",
-          "Your event has been published successfully.",
+          "Event Created 🎉",
+          "The event has been published successfully.",
           [
             {
-              text:
-                "View Event",
+              text: "View Event",
 
               onPress: () =>
                 router.replace({
@@ -362,7 +373,7 @@ export default function CreateEventScreen() {
                     id:
                       data.event._id,
                   },
-                }),
+                } as any),
             },
           ]
         );
@@ -393,6 +404,8 @@ export default function CreateEventScreen() {
           false
         }
       >
+        {/* HERO */}
+
         <LinearGradient
           colors={[
             "#6D28D9",
@@ -410,9 +423,7 @@ export default function CreateEventScreen() {
           style={styles.hero}
         >
           <View
-            style={
-              styles.heroIcon
-            }
+            style={styles.heroIcon}
           >
             <Ionicons
               name="add-circle-outline"
@@ -422,17 +433,13 @@ export default function CreateEventScreen() {
           </View>
 
           <Text
-            style={
-              styles.heroLabel
-            }
+            style={styles.heroLabel}
           >
             ADMIN
           </Text>
 
           <Text
-            style={
-              styles.heroTitle
-            }
+            style={styles.heroTitle}
           >
             Create a new event
           </Text>
@@ -443,17 +450,15 @@ export default function CreateEventScreen() {
             }
           >
             Add event details,
-            category and cover
+            category, date and cover
             image.
           </Text>
         </LinearGradient>
 
         <View
-          style={
-            styles.formCard
-          }
+          style={styles.formCard}
         >
-          {/* COVER IMAGE */}
+          {/* IMAGE */}
 
           <SectionTitle
             icon="image-outline"
@@ -474,12 +479,13 @@ export default function CreateEventScreen() {
                 style={
                   styles.imagePreview
                 }
+                resizeMode="cover"
               />
 
               <LinearGradient
                 colors={[
                   "transparent",
-                  "rgba(17,24,39,0.65)",
+                  "rgba(17,24,39,0.72)",
                 ]}
                 style={
                   styles.imageOverlay
@@ -493,7 +499,7 @@ export default function CreateEventScreen() {
               >
                 <Pressable
                   style={
-                    styles.imageActionButton
+                    styles.imageAction
                   }
                   onPress={
                     chooseImage
@@ -501,7 +507,7 @@ export default function CreateEventScreen() {
                 >
                   <Ionicons
                     name="images-outline"
-                    size={18}
+                    size={17}
                     color="#FFFFFF"
                   />
 
@@ -516,8 +522,8 @@ export default function CreateEventScreen() {
 
                 <Pressable
                   style={[
-                    styles.imageActionButton,
-                    styles.removeButton,
+                    styles.imageAction,
+                    styles.removeAction,
                   ]}
                   onPress={
                     removeImage
@@ -525,7 +531,7 @@ export default function CreateEventScreen() {
                 >
                   <Ionicons
                     name="trash-outline"
-                    size={18}
+                    size={17}
                     color="#FFFFFF"
                   />
 
@@ -541,12 +547,8 @@ export default function CreateEventScreen() {
             </View>
           ) : (
             <Pressable
-              style={
-                styles.uploadBox
-              }
-              onPress={
-                chooseImage
-              }
+              style={styles.uploadBox}
+              onPress={chooseImage}
             >
               <LinearGradient
                 colors={[
@@ -559,7 +561,7 @@ export default function CreateEventScreen() {
               >
                 <Ionicons
                   name="cloud-upload-outline"
-                  size={31}
+                  size={30}
                   color="#9333EA"
                 />
               </LinearGradient>
@@ -569,7 +571,7 @@ export default function CreateEventScreen() {
                   styles.uploadTitle
                 }
               >
-                Upload cover image
+                Add Event Image
               </Text>
 
               <Text
@@ -577,67 +579,42 @@ export default function CreateEventScreen() {
                   styles.uploadSubtitle
                 }
               >
-                JPG, PNG or WEBP
+                Choose a JPG, PNG
+                or WEBP image
               </Text>
+
+              <View
+                style={
+                  styles.choosePhotoButton
+                }
+              >
+                <Ionicons
+                  name="images-outline"
+                  size={16}
+                  color="#7C3AED"
+                />
+
+                <Text
+                  style={
+                    styles.choosePhotoText
+                  }
+                >
+                  Choose Photo
+                </Text>
+              </View>
             </Pressable>
           )}
 
-          {/* BASIC INFO */}
-
-          <SectionTitle
-            icon="information-circle-outline"
-            title="Event Details"
-            subtitle="Tell users about the event"
-          />
-
-          <FieldLabel
-            icon="text-outline"
-            text="Event Title"
-          />
-
-          <TextInput
-            style={styles.input}
-            placeholder="e.g. Melbourne Music Night"
-            placeholderTextColor="#9CA3AF"
-            value={title}
-            onChangeText={
-              setTitle
-            }
-          />
-
-          <FieldLabel
-            icon="document-text-outline"
-            text="Description"
-          />
-
-          <TextInput
-            style={[
-              styles.input,
-              styles.descriptionInput,
-            ]}
-            placeholder="Describe the event..."
-            placeholderTextColor="#9CA3AF"
-            multiline
-            textAlignVertical="top"
-            value={
-              description
-            }
-            onChangeText={
-              setDescription
-            }
-          />
-
           {/* CATEGORY */}
 
-          <FieldLabel
+          <SectionTitle
             icon="grid-outline"
-            text="Category"
+            title="Category"
+            subtitle="Choose the event type"
           />
 
           <View
-            style={
-              styles.categoryGrid
-            }
+            style={styles.categoryGrid}
           >
             {categories.map(
               (item) => {
@@ -647,12 +624,13 @@ export default function CreateEventScreen() {
 
                 return (
                   <Pressable
-                    key={
-                      item.name
-                    }
-                    style={
-                      styles.categoryWrapper
-                    }
+                    key={item.name}
+                    style={[
+                      styles.categoryButton,
+
+                      selected &&
+                        styles.categoryButtonSelected,
+                    ]}
                     onPress={() =>
                       setCategory(
                         item.name
@@ -666,163 +644,271 @@ export default function CreateEventScreen() {
                           "#EC4899",
                         ]}
                         style={
-                          styles.categorySelected
+                          styles.categoryIconSelected
                         }
                       >
                         <Ionicons
                           name={
                             item.icon
                           }
-                          size={
-                            20
-                          }
+                          size={20}
                           color="#FFFFFF"
                         />
-
-                        <Text
-                          style={
-                            styles.categorySelectedText
-                          }
-                        >
-                          {
-                            item.name
-                          }
-                        </Text>
                       </LinearGradient>
                     ) : (
                       <View
                         style={
-                          styles.categoryNormal
+                          styles.categoryIcon
                         }
                       >
                         <Ionicons
                           name={
                             item.icon
                           }
-                          size={
-                            20
-                          }
+                          size={20}
                           color="#9333EA"
                         />
-
-                        <Text
-                          style={
-                            styles.categoryNormalText
-                          }
-                        >
-                          {
-                            item.name
-                          }
-                        </Text>
                       </View>
                     )}
+
+                    <Text
+                      style={[
+                        styles.categoryText,
+
+                        selected &&
+                          styles.categoryTextSelected,
+                      ]}
+                    >
+                      {item.name}
+                    </Text>
                   </Pressable>
                 );
               }
             )}
           </View>
 
-          {/* LOCATION */}
+          {/* EVENT DETAILS */}
+
+          <SectionTitle
+            icon="create-outline"
+            title="Event Details"
+            subtitle="Tell users about the event"
+          />
+
+          <FieldLabel
+            icon="text-outline"
+            text="Event Title"
+          />
+
+          <View
+            style={styles.inputBox}
+          >
+            <Ionicons
+              name="sparkles-outline"
+              size={20}
+              color="#A855F7"
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. Melbourne Music Night"
+              placeholderTextColor="#9CA3AF"
+              value={title}
+              onChangeText={setTitle}
+            />
+          </View>
+
+          <FieldLabel
+            icon="document-text-outline"
+            text="Description"
+          />
+
+          <View
+            style={[
+              styles.inputBox,
+              styles.textAreaBox,
+            ]}
+          >
+            <Ionicons
+              name="document-text-outline"
+              size={20}
+              color="#A855F7"
+              style={{
+                marginTop: 2,
+              }}
+            />
+
+            <TextInput
+              style={[
+                styles.input,
+                styles.textArea,
+              ]}
+              placeholder="Describe the event..."
+              placeholderTextColor="#9CA3AF"
+              multiline
+              textAlignVertical="top"
+              value={description}
+              onChangeText={
+                setDescription
+              }
+            />
+          </View>
 
           <FieldLabel
             icon="location-outline"
             text="Location"
           />
 
-          <TextInput
-            style={styles.input}
-            placeholder="Event location"
-            placeholderTextColor="#9CA3AF"
-            value={location}
-            onChangeText={
-              setLocation
-            }
-          />
+          <View
+            style={styles.inputBox}
+          >
+            <Ionicons
+              name="location-outline"
+              size={20}
+              color="#EC4899"
+            />
 
-          {/* SCHEDULE */}
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. Melbourne Convention Centre"
+              placeholderTextColor="#9CA3AF"
+              value={location}
+              onChangeText={
+                setLocation
+              }
+            />
+          </View>
 
-          <SectionTitle
-            icon="calendar-outline"
-            title="Schedule"
-            subtitle="Choose the date and time"
+          <FieldLabel
+            icon="people-outline"
+            text="Capacity"
           />
 
           <View
-            style={
-              styles.twoColumns
-            }
+            style={styles.inputBox}
           >
-            <View
-              style={
-                styles.flexField
+            <Ionicons
+              name="people-outline"
+              size={20}
+              color="#A855F7"
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. 100"
+              placeholderTextColor="#9CA3AF"
+              keyboardType="number-pad"
+              value={capacity}
+              onChangeText={
+                setCapacity
+              }
+            />
+          </View>
+
+          {/* DATE */}
+
+          <SectionTitle
+            icon="calendar-outline"
+            title="Date & Time"
+            subtitle="Schedule the event"
+          />
+
+          <View
+            style={styles.dateRow}
+          >
+            <Pressable
+              style={styles.dateCard}
+              onPress={() =>
+                setShowDatePicker(
+                  true
+                )
               }
             >
-              <FieldLabel
-                icon="calendar-outline"
-                text="Date"
-              />
-
-              <Pressable
-                style={
-                  styles.pickerButton
-                }
-                onPress={() =>
-                  setShowDatePicker(
-                    true
-                  )
-                }
+              <LinearGradient
+                colors={[
+                  "#F3E8FF",
+                  "#FCE7F3",
+                ]}
+                style={styles.dateIcon}
               >
+                <Ionicons
+                  name="calendar-outline"
+                  size={21}
+                  color="#9333EA"
+                />
+              </LinearGradient>
+
+              <View style={{ flex: 1 }}>
                 <Text
                   style={
-                    styles.pickerText
+                    styles.dateLabel
+                  }
+                >
+                  DATE
+                </Text>
+
+                <Text
+                  style={
+                    styles.dateValue
                   }
                 >
                   {eventDate.toLocaleDateString(
-                    "en-GB",
+                    "en-US",
                     {
-                      day:
-                        "2-digit",
-
                       month:
                         "short",
+
+                      day:
+                        "numeric",
 
                       year:
                         "numeric",
                     }
                   )}
                 </Text>
+              </View>
 
-                <Ionicons
-                  name="chevron-down"
-                  size={17}
-                  color="#A855F7"
-                />
-              </Pressable>
-            </View>
+              <Ionicons
+                name="chevron-down"
+                size={17}
+                color="#A855F7"
+              />
+            </Pressable>
 
-            <View
-              style={
-                styles.flexField
+            <Pressable
+              style={styles.dateCard}
+              onPress={() =>
+                setShowTimePicker(
+                  true
+                )
               }
             >
-              <FieldLabel
-                icon="time-outline"
-                text="Time"
-              />
-
-              <Pressable
-                style={
-                  styles.pickerButton
-                }
-                onPress={() =>
-                  setShowTimePicker(
-                    true
-                  )
-                }
+              <LinearGradient
+                colors={[
+                  "#FCE7F3",
+                  "#F3E8FF",
+                ]}
+                style={styles.dateIcon}
               >
+                <Ionicons
+                  name="time-outline"
+                  size={21}
+                  color="#EC4899"
+                />
+              </LinearGradient>
+
+              <View style={{ flex: 1 }}>
                 <Text
                   style={
-                    styles.pickerText
+                    styles.dateLabel
+                  }
+                >
+                  TIME
+                </Text>
+
+                <Text
+                  style={
+                    styles.dateValue
                   }
                 >
                   {eventDate.toLocaleTimeString(
@@ -836,25 +922,21 @@ export default function CreateEventScreen() {
                     }
                   )}
                 </Text>
+              </View>
 
-                <Ionicons
-                  name="chevron-down"
-                  size={17}
-                  color="#A855F7"
-                />
-              </Pressable>
-            </View>
+              <Ionicons
+                name="chevron-down"
+                size={17}
+                color="#EC4899"
+              />
+            </Pressable>
           </View>
 
           {showDatePicker && (
             <DateTimePicker
-              value={
-                eventDate
-              }
+              value={eventDate}
               mode="date"
-              minimumDate={
-                new Date()
-              }
+              minimumDate={new Date()}
               onChange={
                 handleDateChange
               }
@@ -863,9 +945,7 @@ export default function CreateEventScreen() {
 
           {showTimePicker && (
             <DateTimePicker
-              value={
-                eventDate
-              }
+              value={eventDate}
               mode="time"
               onChange={
                 handleTimeChange
@@ -873,37 +953,82 @@ export default function CreateEventScreen() {
             />
           )}
 
-          {/* CAPACITY */}
+          {/* SUMMARY */}
 
-          <FieldLabel
-            icon="people-outline"
-            text="Capacity"
-          />
+          <View
+            style={styles.summaryCard}
+          >
+            <View
+              style={
+                styles.summaryHeader
+              }
+            >
+              <Text
+                style={
+                  styles.summaryTitle
+                }
+              >
+                Event Summary
+              </Text>
 
-          <TextInput
-            style={styles.input}
-            placeholder="Maximum number of attendees"
-            placeholderTextColor="#9CA3AF"
-            keyboardType="number-pad"
-            value={
-              capacity
-            }
-            onChangeText={
-              setCapacity
-            }
-          />
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={21}
+                color="#A855F7"
+              />
+            </View>
+
+            <SummaryRow
+              label="Category"
+              value={category}
+            />
+
+            <SummaryRow
+              label="Capacity"
+              value={
+                capacity.trim()
+                  ? `${capacity} people`
+                  : "Not set"
+              }
+            />
+
+            <SummaryRow
+              label="Date"
+              value={eventDate.toLocaleDateString(
+                "en-US",
+                {
+                  month:
+                    "short",
+
+                  day:
+                    "numeric",
+
+                  year:
+                    "numeric",
+                }
+              )}
+            />
+
+            <SummaryRow
+              label="Image"
+              value={
+                image
+                  ? "Selected"
+                  : "Optional"
+              }
+              last
+            />
+          </View>
 
           {/* ERROR */}
 
           {error ? (
             <View
-              style={
-                styles.errorBox
-              }
+              style={styles.errorBox}
             >
               <Ionicons
                 name="alert-circle-outline"
-                size={19}
+                size={20}
                 color="#DC2626"
               />
 
@@ -920,12 +1045,14 @@ export default function CreateEventScreen() {
           {/* CREATE */}
 
           <Pressable
-            disabled={
-              loading
-            }
-            onPress={
-              handleCreate
-            }
+            disabled={loading}
+            onPress={handleCreate}
+            style={({ pressed }) => [
+              styles.createWrapper,
+
+              pressed &&
+                styles.pressed,
+            ]}
           >
             <LinearGradient
               colors={[
@@ -957,23 +1084,38 @@ export default function CreateEventScreen() {
                     }
                   >
                     <Ionicons
-                      name="sparkles"
-                      size={20}
+                      name="add"
+                      size={21}
                       color="#FFFFFF"
                     />
                   </View>
 
-                  <Text
-                    style={
-                      styles.createButtonText
-                    }
+                  <View
+                    style={{
+                      flex: 1,
+                    }}
                   >
-                    Publish Event
-                  </Text>
+                    <Text
+                      style={
+                        styles.createButtonText
+                      }
+                    >
+                      Publish Event
+                    </Text>
+
+                    <Text
+                      style={
+                        styles.createSubtitle
+                      }
+                    >
+                      Make this event
+                      available to users
+                    </Text>
+                  </View>
 
                   <Ionicons
                     name="arrow-forward"
-                    size={20}
+                    size={21}
                     color="#FFFFFF"
                   />
                 </>
@@ -998,7 +1140,7 @@ function SectionTitle({
   return (
     <View
       style={
-        styles.sectionTitleRow
+        styles.sectionHeader
       }
     >
       <LinearGradient
@@ -1012,7 +1154,7 @@ function SectionTitle({
       >
         <Ionicons
           name={icon}
-          size={20}
+          size={21}
           color="#9333EA"
         />
       </LinearGradient>
@@ -1047,13 +1189,11 @@ function FieldLabel({
 }) {
   return (
     <View
-      style={
-        styles.labelRow
-      }
+      style={styles.labelRow}
     >
       <Ionicons
         name={icon}
-        size={16}
+        size={14}
         color="#A855F7"
       />
 
@@ -1066,451 +1206,634 @@ function FieldLabel({
   );
 }
 
-const styles =
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor:
-        "#FAF7FF",
+function SummaryRow({
+  label,
+  value,
+  last = false,
+}: {
+  label: string;
+  value: string;
+  last?: boolean;
+}) {
+  return (
+    <View
+      style={[
+        styles.summaryRow,
+
+        last &&
+          styles.summaryRowLast,
+      ]}
+    >
+      <Text
+        style={
+          styles.summaryLabel
+        }
+      >
+        {label}
+      </Text>
+
+      <Text
+        style={
+          styles.summaryValue
+        }
+      >
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor:
+      "#FAF7FF",
+  },
+
+  content: {
+    paddingBottom: 40,
+  },
+
+  pressed: {
+    opacity: 0.92,
+  },
+
+  /* HERO */
+
+  hero: {
+    paddingHorizontal: 23,
+    paddingTop: 35,
+    paddingBottom: 68,
+
+    borderBottomLeftRadius:
+      38,
+
+    borderBottomRightRadius:
+      38,
+  },
+
+  heroIcon: {
+    width: 55,
+    height: 55,
+
+    borderRadius: 18,
+
+    backgroundColor:
+      "rgba(255,255,255,0.17)",
+
+    alignItems: "center",
+    justifyContent:
+      "center",
+
+    marginBottom: 17,
+  },
+
+  heroLabel: {
+    color: "#F5D0FE",
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 1.4,
+  },
+
+  heroTitle: {
+    color: "#FFFFFF",
+    fontSize: 29,
+    fontWeight: "900",
+    marginTop: 5,
+  },
+
+  heroSubtitle: {
+    color: "#FCE7F3",
+    marginTop: 7,
+    lineHeight: 20,
+    maxWidth: 300,
+  },
+
+  /* FORM */
+
+  formCard: {
+    marginHorizontal: 18,
+    marginTop: -38,
+
+    backgroundColor:
+      "#FFFFFF",
+
+    borderRadius: 28,
+
+    padding: 20,
+
+    shadowColor:
+      "#581C87",
+
+    shadowOpacity: 0.08,
+
+    shadowRadius: 16,
+
+    shadowOffset: {
+      width: 0,
+      height: 7,
     },
 
-    content: {
-      paddingBottom: 45,
-    },
+    elevation: 5,
+  },
 
-    hero: {
-      paddingHorizontal: 22,
-      paddingTop: 32,
-      paddingBottom: 46,
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 7,
+    marginBottom: 15,
+  },
 
-      borderBottomLeftRadius:
-        34,
-
-      borderBottomRightRadius:
-        34,
-    },
-
-    heroIcon: {
-      width: 54,
-      height: 54,
-      borderRadius: 18,
-
-      backgroundColor:
-        "rgba(255,255,255,0.17)",
-
-      justifyContent:
-        "center",
-
-      alignItems:
-        "center",
-    },
+  sectionIcon: {
+    width: 43,
+    height: 43,
+
+    borderRadius: 14,
 
-    heroLabel: {
-      color: "#F5D0FE",
-      fontSize: 10,
-      fontWeight: "900",
-      letterSpacing: 1.3,
-      marginTop: 16,
-    },
+    alignItems: "center",
+    justifyContent:
+      "center",
 
-    heroTitle: {
-      color: "#FFFFFF",
-      fontSize: 29,
-      fontWeight: "900",
-      marginTop: 5,
-    },
+    marginRight: 10,
+  },
+
+  sectionTitle: {
+    color: "#111827",
+    fontSize: 16,
+    fontWeight: "900",
+  },
+
+  sectionSubtitle: {
+    color: "#9CA3AF",
+    fontSize: 10,
+    marginTop: 2,
+  },
+
+  /* IMAGE */
+
+  uploadBox: {
+    minHeight: 190,
+
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor:
+      "#D8B4FE",
 
-    heroSubtitle: {
-      color: "#FCE7F3",
-      marginTop: 6,
-      lineHeight: 20,
-    },
+    backgroundColor:
+      "#FCFAFF",
+
+    borderRadius: 21,
+
+    alignItems: "center",
+    justifyContent:
+      "center",
+
+    padding: 20,
+
+    marginBottom: 27,
+  },
+
+  uploadIcon: {
+    width: 61,
+    height: 61,
+
+    borderRadius: 20,
+
+    justifyContent:
+      "center",
+
+    alignItems: "center",
+  },
+
+  uploadTitle: {
+    color: "#111827",
+    fontWeight: "900",
+    fontSize: 15,
+    marginTop: 11,
+  },
 
-    formCard: {
-      marginHorizontal: 18,
-      marginTop: -23,
+  uploadSubtitle: {
+    color: "#9CA3AF",
+    fontSize: 10,
+    marginTop: 4,
+  },
 
-      backgroundColor:
-        "#FFFFFF",
+  choosePhotoButton: {
+    marginTop: 13,
 
-      borderRadius: 27,
-      padding: 20,
+    backgroundColor:
+      "#F3E8FF",
 
-      shadowColor:
-        "#581C87",
+    borderRadius: 12,
 
-      shadowOpacity: 0.08,
-      shadowRadius: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
 
-      shadowOffset: {
-        width: 0,
-        height: 7,
-      },
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
 
-      elevation: 4,
-    },
+  choosePhotoText: {
+    color: "#7C3AED",
+    fontSize: 10,
+    fontWeight: "900",
+  },
 
-    sectionTitleRow: {
-      flexDirection:
-        "row",
+  imageContainer: {
+    height: 200,
+    borderRadius: 21,
+    overflow: "hidden",
+    position: "relative",
+    marginBottom: 27,
+  },
 
-      alignItems:
-        "center",
+  imagePreview: {
+    width: "100%",
+    height: "100%",
+  },
 
-      marginBottom: 15,
-      marginTop: 5,
-    },
+  imageOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
 
-    sectionIcon: {
-      width: 43,
-      height: 43,
+  imageActions: {
+    position: "absolute",
+    left: 12,
+    right: 12,
+    bottom: 12,
 
-      borderRadius: 14,
+    flexDirection: "row",
+    justifyContent:
+      "space-between",
+  },
 
-      justifyContent:
-        "center",
+  imageAction: {
+    backgroundColor:
+      "rgba(124,58,237,0.90)",
 
-      alignItems:
-        "center",
+    borderRadius: 12,
 
-      marginRight: 10,
-    },
+    paddingHorizontal: 11,
+    paddingVertical: 8,
 
-    sectionTitle: {
-      color: "#111827",
-      fontSize: 17,
-      fontWeight: "900",
-    },
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
 
-    sectionSubtitle: {
-      color: "#9CA3AF",
-      fontSize: 11,
-      marginTop: 2,
-    },
+  removeAction: {
+    backgroundColor:
+      "rgba(220,38,38,0.90)",
+  },
 
-    uploadBox: {
-      minHeight: 185,
+  imageActionText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "900",
+  },
 
-      borderWidth: 1.5,
-      borderStyle:
-        "dashed",
+  /* CATEGORIES */
 
-      borderColor:
-        "#D8B4FE",
+  categoryGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 9,
+    marginBottom: 28,
+  },
 
-      backgroundColor:
-        "#FCFAFF",
+  categoryButton: {
+    width: "31%",
 
-      borderRadius: 20,
+    minHeight: 83,
 
-      justifyContent:
-        "center",
+    borderRadius: 16,
 
-      alignItems:
-        "center",
+    borderWidth: 1,
 
-      padding: 20,
+    borderColor:
+      "#F3E8FF",
 
-      marginBottom: 27,
-    },
+    backgroundColor:
+      "#FCFAFF",
 
-    uploadIcon: {
-      width: 62,
-      height: 62,
-      borderRadius: 20,
+    alignItems: "center",
 
-      justifyContent:
-        "center",
+    justifyContent:
+      "center",
 
-      alignItems:
-        "center",
-    },
+    padding: 8,
+  },
 
-    uploadTitle: {
-      color: "#111827",
-      fontSize: 16,
-      fontWeight: "900",
-      marginTop: 12,
-    },
+  categoryButtonSelected: {
+    borderColor:
+      "#D8B4FE",
 
-    uploadSubtitle: {
-      color: "#9CA3AF",
-      fontSize: 11,
-      marginTop: 4,
-    },
+    backgroundColor:
+      "#FAF5FF",
+  },
 
-    imageContainer: {
-      height: 205,
-      borderRadius: 20,
+  categoryIcon: {
+    width: 37,
+    height: 37,
 
-      overflow: "hidden",
+    borderRadius: 12,
 
-      position:
-        "relative",
+    backgroundColor:
+      "#F3E8FF",
 
-      marginBottom: 27,
-    },
+    alignItems: "center",
 
-    imagePreview: {
-      width: "100%",
-      height: "100%",
-    },
+    justifyContent:
+      "center",
+  },
 
-    imageOverlay: {
-      ...StyleSheet.absoluteFillObject,
-    },
+  categoryIconSelected: {
+    width: 37,
+    height: 37,
 
-    imageActions: {
-      position:
-        "absolute",
+    borderRadius: 12,
 
-      bottom: 10,
-      right: 10,
+    alignItems: "center",
 
-      flexDirection:
-        "row",
+    justifyContent:
+      "center",
+  },
 
-      gap: 8,
-    },
+  categoryText: {
+    color: "#6B7280",
+    fontSize: 9,
+    fontWeight: "800",
+    marginTop: 6,
+  },
 
-    imageActionButton: {
-      flexDirection:
-        "row",
+  categoryTextSelected: {
+    color: "#7C3AED",
+    fontWeight: "900",
+  },
 
-      alignItems:
-        "center",
+  /* INPUT */
 
-      gap: 6,
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginBottom: 7,
+  },
 
-      paddingHorizontal: 12,
-      paddingVertical: 9,
+  label: {
+    color: "#374151",
+    fontSize: 11,
+    fontWeight: "800",
+  },
 
-      borderRadius: 12,
+  inputBox: {
+    minHeight: 54,
 
-      backgroundColor:
-        "rgba(88,28,135,0.88)",
-    },
+    borderWidth: 1,
 
-    removeButton: {
-      backgroundColor:
-        "rgba(185,28,28,0.90)",
-    },
+    borderColor:
+      "#E9D5FF",
 
-    imageActionText: {
-      color: "#FFFFFF",
-      fontWeight: "800",
-      fontSize: 12,
-    },
+    backgroundColor:
+      "#FCFAFF",
 
-    labelRow: {
-      flexDirection:
-        "row",
+    borderRadius: 15,
 
-      alignItems:
-        "center",
+    flexDirection: "row",
 
-      gap: 6,
+    alignItems: "center",
 
-      marginBottom: 8,
-    },
+    gap: 9,
 
-    label: {
-      color: "#374151",
-      fontSize: 13,
-      fontWeight: "800",
-    },
+    paddingHorizontal: 13,
 
-    input: {
-      borderWidth: 1,
-      borderColor:
-        "#E9D5FF",
+    marginBottom: 16,
+  },
 
-      backgroundColor:
-        "#FCFAFF",
+  input: {
+    flex: 1,
+    color: "#111827",
+    fontSize: 13,
+  },
 
-      borderRadius: 15,
+  textAreaBox: {
+    minHeight: 125,
+    alignItems: "flex-start",
+    paddingTop: 14,
+  },
 
-      paddingHorizontal: 14,
-      paddingVertical: 13,
+  textArea: {
+    minHeight: 95,
+    paddingTop: 0,
+  },
 
-      color: "#111827",
-      fontSize: 14,
+  /* DATE */
 
-      marginBottom: 18,
-    },
+  dateRow: {
+    flexDirection: "row",
+    gap: 9,
+    marginBottom: 25,
+  },
 
-    descriptionInput: {
-      minHeight: 105,
-    },
+  dateCard: {
+    flex: 1,
 
-    categoryGrid: {
-      flexDirection:
-        "row",
+    minHeight: 73,
 
-      flexWrap: "wrap",
+    borderRadius: 16,
 
-      gap: 9,
+    backgroundColor:
+      "#FCFAFF",
 
-      marginBottom: 22,
-    },
+    borderWidth: 1,
 
-    categoryWrapper: {
-      width: "31%",
-    },
+    borderColor:
+      "#E9D5FF",
 
-    categorySelected: {
-      height: 76,
+    padding: 11,
 
-      borderRadius: 17,
+    flexDirection: "row",
 
-      justifyContent:
-        "center",
+    alignItems: "center",
 
-      alignItems:
-        "center",
+    gap: 8,
+  },
 
-      gap: 6,
-    },
+  dateIcon: {
+    width: 40,
+    height: 40,
 
-    categorySelectedText: {
-      color: "#FFFFFF",
-      fontWeight: "900",
-      fontSize: 11,
-    },
+    borderRadius: 13,
 
-    categoryNormal: {
-      height: 76,
+    alignItems: "center",
 
-      borderRadius: 17,
+    justifyContent:
+      "center",
+  },
 
-      borderWidth: 1,
-      borderColor:
-        "#E9D5FF",
+  dateLabel: {
+    color: "#9CA3AF",
+    fontSize: 7,
+    fontWeight: "900",
+  },
 
-      backgroundColor:
-        "#FCFAFF",
+  dateValue: {
+    color: "#111827",
+    fontSize: 11,
+    fontWeight: "900",
+    marginTop: 2,
+  },
 
-      justifyContent:
-        "center",
+  /* SUMMARY */
 
-      alignItems:
-        "center",
+  summaryCard: {
+    backgroundColor:
+      "#FAF7FF",
 
-      gap: 6,
-    },
+    borderRadius: 19,
 
-    categoryNormalText: {
-      color: "#7C3AED",
-      fontWeight: "800",
-      fontSize: 11,
-    },
+    padding: 15,
 
-    twoColumns: {
-      flexDirection:
-        "row",
+    marginBottom: 16,
+  },
 
-      gap: 10,
+  summaryHeader: {
+    flexDirection: "row",
 
-      marginBottom: 18,
-    },
+    alignItems: "center",
 
-    flexField: {
-      flex: 1,
-    },
+    justifyContent:
+      "space-between",
 
-    pickerButton: {
-      minHeight: 51,
+    paddingBottom: 10,
 
-      borderWidth: 1,
-      borderColor:
-        "#E9D5FF",
+    borderBottomWidth: 1,
 
-      backgroundColor:
-        "#FCFAFF",
+    borderBottomColor:
+      "#E9D5FF",
+  },
 
-      borderRadius: 15,
+  summaryTitle: {
+    color: "#111827",
+    fontWeight: "900",
+    fontSize: 14,
+  },
 
-      paddingHorizontal: 12,
+  summaryRow: {
+    minHeight: 42,
 
-      flexDirection:
-        "row",
+    flexDirection: "row",
 
-      alignItems:
-        "center",
+    justifyContent:
+      "space-between",
 
-      justifyContent:
-        "space-between",
-    },
+    alignItems: "center",
 
-    pickerText: {
-      color: "#111827",
-      fontWeight: "700",
-      fontSize: 13,
-    },
+    borderBottomWidth: 1,
 
-    errorBox: {
-      flexDirection:
-        "row",
+    borderBottomColor:
+      "#F3E8FF",
+  },
 
-      alignItems:
-        "center",
+  summaryRowLast: {
+    borderBottomWidth: 0,
+  },
 
-      gap: 8,
+  summaryLabel: {
+    color: "#9CA3AF",
+    fontSize: 10,
+    fontWeight: "700",
+  },
 
-      backgroundColor:
-        "#FEF2F2",
+  summaryValue: {
+    color: "#111827",
+    fontSize: 10,
+    fontWeight: "900",
+    maxWidth: "60%",
+    textAlign: "right",
+  },
 
-      padding: 12,
+  /* ERROR */
 
-      borderRadius: 13,
+  errorBox: {
+    flexDirection: "row",
 
-      marginBottom: 15,
-    },
+    alignItems: "center",
 
-    errorText: {
-      flex: 1,
-      color: "#B91C1C",
-      lineHeight: 18,
-    },
+    gap: 8,
 
-    createButton: {
-      minHeight: 59,
+    backgroundColor:
+      "#FEF2F2",
 
-      borderRadius: 18,
+    padding: 12,
 
-      flexDirection:
-        "row",
+    borderRadius: 13,
 
-      alignItems:
-        "center",
+    marginBottom: 15,
+  },
 
-      justifyContent:
-        "center",
+  errorText: {
+    flex: 1,
+    color: "#B91C1C",
+    lineHeight: 18,
+    fontSize: 11,
+  },
 
-      gap: 9,
+  /* CREATE */
 
-      marginTop: 4,
-    },
+  createWrapper: {
+    borderRadius: 19,
+    overflow: "hidden",
 
-    createIcon: {
-      width: 31,
-      height: 31,
+    shadowColor:
+      "#7C3AED",
 
-      borderRadius: 10,
+    shadowOpacity: 0.18,
 
-      backgroundColor:
-        "rgba(255,255,255,0.16)",
+    shadowRadius: 12,
 
-      justifyContent:
-        "center",
+    elevation: 5,
+  },
 
-      alignItems:
-        "center",
-    },
+  createButton: {
+    minHeight: 68,
 
-    createButtonText: {
-      color: "#FFFFFF",
-      fontWeight: "900",
-      fontSize: 16,
-    },
-  });
+    borderRadius: 18,
+
+    flexDirection: "row",
+
+    alignItems: "center",
+
+    paddingHorizontal: 15,
+
+    gap: 10,
+  },
+
+  createIcon: {
+    width: 40,
+    height: 40,
+
+    borderRadius: 13,
+
+    backgroundColor:
+      "rgba(255,255,255,0.16)",
+
+    justifyContent:
+      "center",
+
+    alignItems: "center",
+  },
+
+  createButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "900",
+    fontSize: 15,
+  },
+
+  createSubtitle: {
+    color: "#FCE7F3",
+    fontSize: 9,
+    marginTop: 2,
+  },
+});

@@ -1,6 +1,9 @@
 import { Stack } from "expo-router";
+import React from "react";
 
-import { AuthProvider } from "../src/context/AuthContext";
+import {
+  AuthProvider,
+} from "../src/context/AuthContext";
 
 export default function RootLayout() {
   return (
@@ -8,109 +11,178 @@ export default function RootLayout() {
       <Stack
         screenOptions={{
           headerStyle: {
-            backgroundColor: "#FFFFFF",
+            backgroundColor:
+              "#FFFFFF",
           },
 
-          headerTintColor: "#0F172A",
+          headerTintColor:
+            "#111827",
 
           headerTitleStyle: {
-            fontWeight: "800",
+            fontWeight:
+              "800",
           },
 
-          headerShadowVisible: false,
+          headerShadowVisible:
+            false,
 
           contentStyle: {
-            backgroundColor: "#F8FAFC",
+            backgroundColor:
+              "#FAF7FF",
           },
+
+          headerBackTitle:
+            "Back",
         }}
       >
-        {/* Authentication */}
+        {/* AUTH */}
+
         <Stack.Screen
           name="index"
           options={{
-            headerShown: false,
+            headerShown:
+              false,
           }}
         />
 
         <Stack.Screen
           name="login"
           options={{
-            headerShown: false,
+            headerShown:
+              false,
           }}
         />
 
         <Stack.Screen
           name="register"
           options={{
-            headerShown: false,
+            headerShown:
+              false,
           }}
         />
 
-        {/* Main Home */}
+        {/* USER */}
+
         <Stack.Screen
           name="home"
           options={{
-            headerShown: false,
+            headerShown:
+              false,
           }}
         />
+
+        {/* ADMIN */}
 
         <Stack.Screen
           name="admin"
           options={{
-            headerShown: false,
+            headerShown:
+              false,
           }}
         />
 
-        {/* Events */}
+        {/* EVENTS */}
+
         <Stack.Screen
           name="events/create"
           options={{
-            title: "Create Event",
-            presentation: "card",
+            title:
+              "Create Event",
+
+            headerTintColor:
+              "#7C3AED",
           }}
         />
 
         <Stack.Screen
           name="events/[id]"
           options={{
-            title: "Event Details",
+            title:
+              "Event Details",
+
+            headerTransparent:
+              true,
+
+            headerTitle:
+              "",
+
+            headerTintColor:
+              "#FFFFFF",
           }}
         />
 
         <Stack.Screen
           name="events/edit/[id]"
           options={{
-            title: "Edit Event",
+            title:
+              "Edit Event",
+
+            headerTintColor:
+              "#7C3AED",
           }}
         />
 
-        {/* Bookings */}
+        {/* BOOKINGS */}
+
         <Stack.Screen
           name="bookings/index"
           options={{
-            title: "My Bookings",
+            title:
+              "My Bookings",
+
+            headerShown:
+              false,
           }}
         />
 
         <Stack.Screen
           name="bookings/create"
           options={{
-            title: "Book Event",
-            presentation: "card",
+            title:
+              "Book Event",
+
+            headerTransparent:
+              true,
+
+            headerTitle:
+              "",
+
+            headerTintColor:
+              "#FFFFFF",
           }}
         />
 
         <Stack.Screen
           name="bookings/[id]"
           options={{
-            title: "Booking Details",
+            title:
+              "Booking Details",
+
+            headerTransparent:
+              true,
+
+            headerTitle:
+              "",
+
+            headerTintColor:
+              "#FFFFFF",
           }}
         />
 
         <Stack.Screen
           name="bookings/edit/[id]"
           options={{
-            title: "Change Seats",
+            title:
+              "Change Seats",
+
+            headerTransparent:
+              true,
+
+            headerTitle:
+              "",
+
+            headerTintColor:
+              "#FFFFFF",
           }}
         />
       </Stack>

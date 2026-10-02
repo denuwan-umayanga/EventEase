@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
 import React, {
   useCallback,
@@ -18,8 +19,8 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
 
+import RoleGuard from "../src/components/RoleGuard";
 import { API_URL } from "../src/config/api";
 import { useAuth } from "../src/context/AuthContext";
 import {
@@ -67,43 +68,36 @@ const categories: {
 ];
 
 export default function HomeScreen() {
-  const {
-    user,
-    signOut,
-  } = useAuth();
+  return (
+    <RoleGuard allow="user">
+      <HomeContent />
+    </RoleGuard>
+  );
+}
 
-  const [
-    events,
-    setEvents,
-  ] = useState<EventItem[]>([]);
+function HomeContent() {
+  const { user, signOut } = useAuth();
 
-  const [
-    loading,
-    setLoading,
-  ] = useState(true);
+  const [events, setEvents] =
+    useState<EventItem[]>([]);
 
-  const [
-    refreshing,
-    setRefreshing,
-  ] = useState(false);
+  const [loading, setLoading] =
+    useState(true);
 
-  const [
-    error,
-    setError,
-  ] = useState("");
+  const [refreshing, setRefreshing] =
+    useState(false);
 
-  const [
-    search,
-    setSearch,
-  ] = useState("");
+  const [error, setError] =
+    useState("");
+
+  const [search, setSearch] =
+    useState("");
 
   const [
     selectedCategory,
     setSelectedCategory,
   ] =
-    useState<CategoryFilter>(
-      "All"
-    );
+    useState<CategoryFilter>("All");
 
   const loadEvents = async (
     showLoader = true
@@ -115,10 +109,9 @@ export default function HomeScreen() {
 
       setError("");
 
-      const response =
-        await fetch(
-          `${API_URL}/api/events`
-        );
+      const response = await fetch(
+        `${API_URL}/api/events`
+      );
 
       const data =
         await response.json();
@@ -156,14 +149,11 @@ export default function HomeScreen() {
     loadEvents(false);
   };
 
-  const handleLogout =
-    async () => {
-      await signOut();
+  const handleLogout = async () => {
+    await signOut();
 
-      router.replace(
-        "/login"
-      );
-    };
+    router.replace("/login");
+  };
 
   const normalizedEvents =
     useMemo(() => {
@@ -233,9 +223,7 @@ export default function HomeScreen() {
   if (loading) {
     return (
       <SafeAreaView
-        style={
-          styles.loadingScreen
-        }
+        style={styles.loadingScreen}
       >
         <LinearGradient
           colors={[
@@ -243,9 +231,7 @@ export default function HomeScreen() {
             "#A855F7",
             "#EC4899",
           ]}
-          style={
-            styles.loadingLogo
-          }
+          style={styles.loadingLogo}
         >
           <Ionicons
             name="ticket"
@@ -263,12 +249,9 @@ export default function HomeScreen() {
         />
 
         <Text
-          style={
-            styles.loadingText
-          }
+          style={styles.loadingText}
         >
-          Finding amazing
-          events...
+          Finding amazing events...
         </Text>
       </SafeAreaView>
     );
@@ -276,9 +259,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView
-      style={
-        styles.container
-      }
+      style={styles.container}
     >
       <ScrollView
         showsVerticalScrollIndicator={
@@ -286,12 +267,8 @@ export default function HomeScreen() {
         }
         refreshControl={
           <RefreshControl
-            refreshing={
-              refreshing
-            }
-            onRefresh={
-              handleRefresh
-            }
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
             tintColor="#A855F7"
           />
         }
@@ -300,6 +277,7 @@ export default function HomeScreen() {
         }
       >
         {/* HERO */}
+
         <LinearGradient
           colors={[
             "#6D28D9",
@@ -317,9 +295,7 @@ export default function HomeScreen() {
           style={styles.hero}
         >
           <View
-            style={
-              styles.heroTop
-            }
+            style={styles.heroTop}
           >
             <View
               style={
@@ -351,8 +327,8 @@ export default function HomeScreen() {
                   styles.heroSubtitle
                 }
               >
-                Discover your
-                next unforgettable
+                Discover your next
+                unforgettable
                 experience.
               </Text>
             </View>
@@ -379,10 +355,9 @@ export default function HomeScreen() {
           </View>
 
           {/* SEARCH */}
+
           <View
-            style={
-              styles.searchBox
-            }
+            style={styles.searchBox}
           >
             <Ionicons
               name="search-outline"
@@ -397,13 +372,10 @@ export default function HomeScreen() {
               placeholder="Search events..."
               placeholderTextColor="#9CA3AF"
               value={search}
-              onChangeText={
-                setSearch
-              }
+              onChangeText={setSearch}
             />
 
-            {search.length >
-              0 && (
+            {search.length > 0 && (
               <Pressable
                 onPress={() =>
                   setSearch("")
@@ -420,10 +392,9 @@ export default function HomeScreen() {
         </LinearGradient>
 
         {/* MY BOOKINGS */}
+
         <Pressable
-          style={({
-            pressed,
-          }) => [
+          style={({ pressed }) => [
             styles.bookingShortcut,
 
             pressed &&
@@ -469,8 +440,8 @@ export default function HomeScreen() {
                 styles.bookingShortcutSubtitle
               }
             >
-              View and manage
-              your reservations
+              View and manage your
+              reservations
             </Text>
           </View>
 
@@ -487,11 +458,10 @@ export default function HomeScreen() {
           </View>
         </Pressable>
 
-        {/* CATEGORIES */}
+        {/* CATEGORY HEADER */}
+
         <View
-          style={
-            styles.sectionHeader
-          }
+          style={styles.sectionHeader}
         >
           <View>
             <Text
@@ -522,12 +492,12 @@ export default function HomeScreen() {
                 styles.eventCountText
               }
             >
-              {
-                filteredEvents.length
-              }
+              {filteredEvents.length}
             </Text>
           </View>
         </View>
+
+        {/* CATEGORIES */}
 
         <ScrollView
           horizontal
@@ -535,23 +505,27 @@ export default function HomeScreen() {
             false
           }
           contentContainerStyle={
-            styles.categoryRow
+            styles.categories
           }
         >
           {categories.map(
-            (category) => {
+            (item) => {
               const selected =
                 selectedCategory ===
-                category.name;
+                item.name;
 
               return (
                 <Pressable
-                  key={
-                    category.name
-                  }
+                  key={item.name}
+                  style={[
+                    styles.categoryButton,
+
+                    selected &&
+                      styles.categoryButtonSelected,
+                  ]}
                   onPress={() =>
                     setSelectedCategory(
-                      category.name
+                      item.name
                     )
                   }
                 >
@@ -562,52 +536,39 @@ export default function HomeScreen() {
                         "#EC4899",
                       ]}
                       style={
-                        styles.categorySelected
+                        styles.categoryIconSelected
                       }
                     >
                       <Ionicons
-                        name={
-                          category.icon
-                        }
+                        name={item.icon}
                         size={17}
                         color="#FFFFFF"
                       />
-
-                      <Text
-                        style={
-                          styles.categorySelectedText
-                        }
-                      >
-                        {
-                          category.name
-                        }
-                      </Text>
                     </LinearGradient>
                   ) : (
                     <View
                       style={
-                        styles.categoryNormal
+                        styles.categoryIcon
                       }
                     >
                       <Ionicons
-                        name={
-                          category.icon
-                        }
+                        name={item.icon}
                         size={17}
-                        color="#7C3AED"
+                        color="#9333EA"
                       />
-
-                      <Text
-                        style={
-                          styles.categoryNormalText
-                        }
-                      >
-                        {
-                          category.name
-                        }
-                      </Text>
                     </View>
                   )}
+
+                  <Text
+                    style={[
+                      styles.categoryText,
+
+                      selected &&
+                        styles.categoryTextSelected,
+                    ]}
+                  >
+                    {item.name}
+                  </Text>
                 </Pressable>
               );
             }
@@ -615,28 +576,21 @@ export default function HomeScreen() {
         </ScrollView>
 
         {/* ERROR */}
+
         {error ? (
           <View
-            style={
-              styles.errorCard
-            }
+            style={styles.errorCard}
           >
-            <View
-              style={
-                styles.errorIcon
-              }
-            >
-              <Ionicons
-                name="cloud-offline-outline"
-                size={28}
-                color="#DC2626"
-              />
-            </View>
+            <Ionicons
+              name="cloud-offline-outline"
+              size={26}
+              color="#DC2626"
+            />
 
             <View
-              style={
-                styles.errorTextArea
-              }
+              style={{
+                flex: 1,
+              }}
             >
               <Text
                 style={
@@ -663,21 +617,20 @@ export default function HomeScreen() {
             >
               <Ionicons
                 name="refresh"
-                size={23}
-                color="#A855F7"
+                size={22}
+                color="#9333EA"
               />
             </Pressable>
           </View>
         ) : null}
 
-        {/* NO SEARCH RESULTS */}
+        {/* EMPTY */}
+
         {!error &&
-          filteredEvents
-            .length === 0 && (
+          filteredEvents.length ===
+            0 && (
             <View
-              style={
-                styles.emptyCard
-              }
+              style={styles.emptyCard}
             >
               <LinearGradient
                 colors={[
@@ -690,7 +643,7 @@ export default function HomeScreen() {
               >
                 <Ionicons
                   name="search-outline"
-                  size={37}
+                  size={34}
                   color="#9333EA"
                 />
               </LinearGradient>
@@ -708,9 +661,8 @@ export default function HomeScreen() {
                   styles.emptyText
                 }
               >
-                Try another
-                category or search
-                phrase.
+                Try another search
+                or category.
               </Text>
 
               <Pressable
@@ -735,7 +687,8 @@ export default function HomeScreen() {
             </View>
           )}
 
-        {/* FEATURED EVENT */}
+        {/* FEATURED */}
+
         {!error &&
           featuredEvent && (
             <>
@@ -744,17 +697,28 @@ export default function HomeScreen() {
                   styles.titleRow
                 }
               >
-                <Text
-                  style={
-                    styles.contentHeading
-                  }
-                >
-                  Featured Event
-                </Text>
+                <View>
+                  <Text
+                    style={
+                      styles.sectionTitle
+                    }
+                  >
+                    Featured
+                  </Text>
+
+                  <Text
+                    style={
+                      styles.sectionSubtitle
+                    }
+                  >
+                    EventEase pick
+                    for you
+                  </Text>
+                </View>
 
                 <Ionicons
                   name="sparkles"
-                  size={20}
+                  size={21}
                   color="#EC4899"
                 />
               </View>
@@ -763,39 +727,25 @@ export default function HomeScreen() {
                 event={
                   featuredEvent
                 }
-                onPress={() =>
-                  router.push({
-                    pathname:
-                      "/events/[id]",
-
-                    params: {
-                      id:
-                        featuredEvent._id,
-                    },
-                  })
-                }
               />
             </>
           )}
 
         {/* UPCOMING */}
+
         {!error &&
           upcomingEvents.length >
             0 && (
             <>
               <View
-                style={[
-                  styles.titleRow,
-                  {
-                    marginTop:
-                      29,
-                  },
-                ]}
+                style={
+                  styles.titleRow
+                }
               >
                 <View>
                   <Text
                     style={
-                      styles.contentHeading
+                      styles.sectionTitle
                     }
                   >
                     Upcoming Events
@@ -803,35 +753,36 @@ export default function HomeScreen() {
 
                   <Text
                     style={
-                      styles.contentSubheading
+                      styles.sectionSubtitle
                     }
                   >
-                    More experiences
-                    waiting for you
+                    More events to
+                    explore
+                  </Text>
+                </View>
+
+                <View
+                  style={
+                    styles.smallCount
+                  }
+                >
+                  <Text
+                    style={
+                      styles.smallCountText
+                    }
+                  >
+                    {
+                      upcomingEvents.length
+                    }
                   </Text>
                 </View>
               </View>
 
               {upcomingEvents.map(
                 (event) => (
-                  <CompactEventCard
-                    key={
-                      event._id
-                    }
-                    event={
-                      event
-                    }
-                    onPress={() =>
-                      router.push({
-                        pathname:
-                          "/events/[id]",
-
-                        params: {
-                          id:
-                            event._id,
-                        },
-                      })
-                    }
+                  <UpcomingEventCard
+                    key={event._id}
+                    event={event}
                   />
                 )
               )}
@@ -840,7 +791,7 @@ export default function HomeScreen() {
 
         <View
           style={{
-            height: 25,
+            height: 30,
           }}
         />
       </ScrollView>
@@ -848,43 +799,38 @@ export default function HomeScreen() {
   );
 }
 
-/* ------------------------------------------ */
-/* FEATURED CARD                              */
-/* ------------------------------------------ */
-
 function FeaturedEventCard({
   event,
-  onPress,
 }: {
   event: EventItem;
-  onPress: () => void;
 }) {
   const imageUrl =
     getImageUrl(event.image);
 
   const date =
-    new Date(
-      event.eventDate
-    );
+    new Date(event.eventDate);
 
   const soldOut =
     event.availableSeats <= 0;
 
-  const category =
-    event.category ||
-    "Social";
-
   return (
     <Pressable
-      style={({
-        pressed,
-      }) => [
+      style={({ pressed }) => [
         styles.featuredCard,
 
         pressed &&
           styles.cardPressed,
       ]}
-      onPress={onPress}
+      onPress={() =>
+        router.push({
+          pathname:
+            "/events/[id]",
+
+          params: {
+            id: event._id,
+          },
+        })
+      }
     >
       <View
         style={
@@ -897,7 +843,7 @@ function FeaturedEventCard({
               uri: imageUrl,
             }}
             style={
-              styles.fullImage
+              styles.featuredImage
             }
             resizeMode="cover"
           />
@@ -905,21 +851,28 @@ function FeaturedEventCard({
           <LinearGradient
             colors={[
               "#7C3AED",
+              "#A855F7",
               "#EC4899",
             ]}
             style={
-              styles.fullImage
+              styles.featuredImage
             }
-          />
+          >
+            <Ionicons
+              name="calendar"
+              size={60}
+              color="rgba(255,255,255,0.35)"
+            />
+          </LinearGradient>
         )}
 
         <LinearGradient
           colors={[
-            "rgba(17,24,39,0.02)",
-            "rgba(17,24,39,0.75)",
+            "transparent",
+            "rgba(17,24,39,0.82)",
           ]}
           style={
-            styles.imageOverlay
+            styles.featuredOverlay
           }
         />
 
@@ -930,25 +883,15 @@ function FeaturedEventCard({
         >
           <View
             style={
-              styles.categoryBadge
+              styles.featuredCategory
             }
           >
-            <Ionicons
-              name={
-                getCategoryIcon(
-                  category
-                )
-              }
-              size={13}
-              color="#FFFFFF"
-            />
-
             <Text
               style={
-                styles.categoryBadgeText
+                styles.featuredCategoryText
               }
             >
-              {category}
+              {event.category}
             </Text>
           </View>
 
@@ -956,8 +899,9 @@ function FeaturedEventCard({
             style={[
               styles.availabilityBadge,
 
-              soldOut &&
-                styles.soldOutBadge,
+              soldOut
+                ? styles.soldOutBadge
+                : styles.openBadge,
             ]}
           >
             <Text
@@ -1005,11 +949,8 @@ function FeaturedEventCard({
               {date.toLocaleDateString(
                 "en-US",
                 {
-                  month:
-                    "short",
-
-                  day:
-                    "numeric",
+                  month: "short",
+                  day: "numeric",
                 }
               )}
             </Text>
@@ -1027,10 +968,10 @@ function FeaturedEventCard({
             />
 
             <Text
-              numberOfLines={1}
               style={
                 styles.featuredLocation
               }
+              numberOfLines={1}
             >
               {event.location}
             </Text>
@@ -1049,7 +990,7 @@ function FeaturedEventCard({
               styles.featuredFooterLabel
             }
           >
-            Starting
+            EVENT DATE
           </Text>
 
           <Text
@@ -1057,24 +998,19 @@ function FeaturedEventCard({
               styles.featuredFooterValue
             }
           >
-            {date.toLocaleTimeString(
+            {date.toLocaleDateString(
               "en-US",
               {
-                hour:
-                  "2-digit",
-
-                minute:
-                  "2-digit",
+                weekday:
+                  "short",
+                month: "short",
+                day: "numeric",
               }
             )}
           </Text>
         </View>
 
-        <LinearGradient
-          colors={[
-            "#7C3AED",
-            "#EC4899",
-          ]}
+        <View
           style={
             styles.exploreButton
           }
@@ -1089,56 +1025,48 @@ function FeaturedEventCard({
 
           <Ionicons
             name="arrow-forward"
-            size={16}
+            size={17}
             color="#FFFFFF"
           />
-        </LinearGradient>
+        </View>
       </View>
     </Pressable>
   );
 }
 
-/* ------------------------------------------ */
-/* COMPACT EVENT CARD                         */
-/* ------------------------------------------ */
-
-function CompactEventCard({
+function UpcomingEventCard({
   event,
-  onPress,
 }: {
   event: EventItem;
-  onPress: () => void;
 }) {
   const imageUrl =
     getImageUrl(event.image);
 
   const date =
-    new Date(
-      event.eventDate
-    );
-
-  const category =
-    event.category ||
-    "Social";
-
-  const soldOut =
-    event.availableSeats <= 0;
+    new Date(event.eventDate);
 
   return (
     <Pressable
-      style={({
-        pressed,
-      }) => [
-        styles.compactCard,
+      style={({ pressed }) => [
+        styles.upcomingCard,
 
         pressed &&
           styles.cardPressed,
       ]}
-      onPress={onPress}
+      onPress={() =>
+        router.push({
+          pathname:
+            "/events/[id]",
+
+          params: {
+            id: event._id,
+          },
+        })
+      }
     >
       <View
         style={
-          styles.compactImageArea
+          styles.upcomingImageArea
         }
       >
         {imageUrl ? (
@@ -1147,31 +1075,31 @@ function CompactEventCard({
               uri: imageUrl,
             }}
             style={
-              styles.fullImage
+              styles.upcomingImage
             }
             resizeMode="cover"
           />
         ) : (
           <LinearGradient
             colors={[
-              "#8B5CF6",
+              "#7C3AED",
               "#EC4899",
             ]}
             style={
-              styles.fullImage
+              styles.upcomingImage
             }
           >
             <Ionicons
-              name="calendar"
-              size={32}
-              color="rgba(255,255,255,0.50)"
+              name="calendar-outline"
+              size={30}
+              color="#FFFFFF"
             />
           </LinearGradient>
         )}
 
         <View
           style={
-            styles.dateBubble
+            styles.dateBadge
           }
         >
           <Text
@@ -1202,67 +1130,42 @@ function CompactEventCard({
 
       <View
         style={
-          styles.compactContent
+          styles.upcomingContent
         }
       >
-        <View
+        <Text
           style={
-            styles.compactCategoryRow
+            styles.upcomingCategory
           }
         >
-          <Text
-            style={
-              styles.compactCategory
-            }
-          >
-            {category}
-          </Text>
-
-          <View
-            style={[
-              styles.smallAvailability,
-
-              soldOut &&
-                styles.smallSoldOut,
-            ]}
-          >
-            <Text
-              style={
-                styles.smallAvailabilityText
-              }
-            >
-              {soldOut
-                ? "Sold out"
-                : `${event.availableSeats} seats`}
-            </Text>
-          </View>
-        </View>
+          {event.category}
+        </Text>
 
         <Text
-          numberOfLines={2}
           style={
-            styles.compactTitle
+            styles.upcomingTitle
           }
+          numberOfLines={2}
         >
           {event.title}
         </Text>
 
         <View
           style={
-            styles.compactInfo
+            styles.upcomingMeta
           }
         >
           <Ionicons
             name="location-outline"
-            size={15}
+            size={14}
             color="#A855F7"
           />
 
           <Text
-            numberOfLines={1}
             style={
-              styles.compactInfoText
+              styles.upcomingMetaText
             }
+            numberOfLines={1}
           >
             {event.location}
           </Text>
@@ -1270,18 +1173,18 @@ function CompactEventCard({
 
         <View
           style={
-            styles.compactInfo
+            styles.upcomingMeta
           }
         >
           <Ionicons
             name="time-outline"
-            size={15}
+            size={14}
             color="#EC4899"
           />
 
           <Text
             style={
-              styles.compactInfoText
+              styles.upcomingMetaText
             }
           >
             {date.toLocaleTimeString(
@@ -1289,61 +1192,49 @@ function CompactEventCard({
               {
                 hour:
                   "2-digit",
-
                 minute:
                   "2-digit",
               }
             )}
           </Text>
         </View>
-      </View>
 
-      <View
-        style={
-          styles.compactArrow
-        }
-      >
-        <Ionicons
-          name="chevron-forward"
-          size={19}
-          color="#9333EA"
-        />
+        <View
+          style={
+            styles.upcomingFooter
+          }
+        >
+          <View
+            style={
+              styles.seatsBadge
+            }
+          >
+            <Ionicons
+              name="people-outline"
+              size={13}
+              color="#7C3AED"
+            />
+
+            <Text
+              style={
+                styles.seatsText
+              }
+            >
+              {event.availableSeats}{" "}
+              seats
+            </Text>
+          </View>
+
+          <Ionicons
+            name="chevron-forward"
+            size={19}
+            color="#9333EA"
+          />
+        </View>
       </View>
     </Pressable>
   );
 }
-
-/* ------------------------------------------ */
-/* CATEGORY ICON                              */
-/* ------------------------------------------ */
-
-function getCategoryIcon(
-  category: string
-): any {
-  switch (category) {
-    case "Music":
-      return "musical-notes";
-
-    case "Tech":
-      return "hardware-chip";
-
-    case "Business":
-      return "briefcase";
-
-    case "Sports":
-      return "football";
-
-    case "Workshop":
-      return "construct";
-
-    default:
-      return "people";
-  }
-}
-
-/* ------------------------------------------ */
-/* STYLES                                     */
-/* ------------------------------------------ */
 
 const styles =
   StyleSheet.create({
@@ -1354,7 +1245,7 @@ const styles =
     },
 
     scrollContent: {
-      paddingBottom: 35,
+      paddingBottom: 20,
     },
 
     loadingScreen: {
@@ -1368,9 +1259,9 @@ const styles =
     },
 
     loadingLogo: {
-      width: 74,
-      height: 74,
-      borderRadius: 24,
+      width: 76,
+      height: 76,
+      borderRadius: 25,
       justifyContent:
         "center",
       alignItems:
@@ -1378,8 +1269,8 @@ const styles =
     },
 
     loadingText: {
-      marginTop: 14,
       color: "#6B7280",
+      marginTop: 12,
       fontWeight: "600",
     },
 
@@ -1388,7 +1279,7 @@ const styles =
     },
 
     cardPressed: {
-      opacity: 0.93,
+      opacity: 0.92,
       transform: [
         {
           scale: 0.99,
@@ -1400,23 +1291,19 @@ const styles =
 
     hero: {
       paddingHorizontal: 21,
-      paddingTop: 25,
-      paddingBottom: 34,
-
+      paddingTop: 26,
+      paddingBottom: 31,
       borderBottomLeftRadius:
         34,
-
       borderBottomRightRadius:
         34,
+      marginBottom: 18,
     },
 
     heroTop: {
-      flexDirection:
-        "row",
-
+      flexDirection: "row",
       justifyContent:
         "space-between",
-
       alignItems:
         "flex-start",
     },
@@ -1430,7 +1317,7 @@ const styles =
       color: "#F5D0FE",
       fontSize: 10,
       fontWeight: "900",
-      letterSpacing: 1.3,
+      letterSpacing: 1.2,
     },
 
     greeting: {
@@ -1442,172 +1329,139 @@ const styles =
 
     heroSubtitle: {
       color: "#FCE7F3",
-      fontSize: 14,
-      lineHeight: 21,
-      marginTop: 6,
+      lineHeight: 20,
+      marginTop: 5,
       maxWidth: 280,
     },
 
     logoutButton: {
-      width: 46,
-      height: 46,
+      width: 47,
+      height: 47,
       borderRadius: 15,
-
       backgroundColor:
-        "rgba(255,255,255,0.17)",
-
+        "rgba(255,255,255,0.16)",
       justifyContent:
         "center",
-
       alignItems:
         "center",
     },
 
-    /* SEARCH */
-
     searchBox: {
-      marginTop: 25,
-
-      height: 56,
-
+      minHeight: 56,
       backgroundColor:
         "#FFFFFF",
-
       borderRadius: 18,
-
-      flexDirection:
-        "row",
-
-      alignItems:
-        "center",
-
-      paddingHorizontal:
-        15,
-
-      gap: 10,
-
-      shadowColor:
-        "#581C87",
-
-      shadowOpacity: 0.09,
-      shadowRadius: 12,
-
-      elevation: 3,
+      marginTop: 24,
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 15,
+      gap: 9,
     },
 
     searchInput: {
       flex: 1,
-      fontSize: 15,
       color: "#111827",
+      fontSize: 14,
     },
 
     /* BOOKING SHORTCUT */
 
     bookingShortcut: {
       marginHorizontal: 20,
-      marginTop: 20,
-
       backgroundColor:
         "#FFFFFF",
-
-      borderRadius: 22,
+      borderRadius: 20,
       padding: 14,
-
-      flexDirection:
-        "row",
-
-      alignItems:
-        "center",
-
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 25,
       shadowColor:
         "#581C87",
-
       shadowOpacity: 0.06,
-      shadowRadius: 15,
-
-      elevation: 3,
+      shadowRadius: 12,
+      elevation: 2,
     },
 
     bookingShortcutIcon: {
-      width: 50,
-      height: 50,
+      width: 49,
+      height: 49,
       borderRadius: 16,
-
       justifyContent:
         "center",
-
       alignItems:
         "center",
     },
 
     bookingShortcutText: {
       flex: 1,
-      marginLeft: 12,
+      marginLeft: 11,
     },
 
     bookingShortcutTitle: {
-      fontSize: 16,
-      fontWeight: "900",
       color: "#111827",
+      fontWeight: "900",
+      fontSize: 15,
     },
 
     bookingShortcutSubtitle: {
-      color: "#6B7280",
-      fontSize: 12,
-      marginTop: 3,
+      color: "#9CA3AF",
+      fontSize: 10,
+      marginTop: 2,
     },
 
     arrowCircle: {
-      width: 35,
-      height: 35,
+      width: 36,
+      height: 36,
       borderRadius: 12,
       backgroundColor:
-        "#F3E8FF",
+        "#FAF5FF",
       justifyContent:
         "center",
       alignItems:
         "center",
     },
 
-    /* SECTION */
+    /* SECTIONS */
 
     sectionHeader: {
-      marginTop: 27,
       paddingHorizontal: 20,
-
-      flexDirection:
-        "row",
-
+      flexDirection: "row",
       justifyContent:
         "space-between",
+      alignItems: "center",
+      marginBottom: 13,
+    },
 
-      alignItems:
-        "center",
+    titleRow: {
+      paddingHorizontal: 20,
+      flexDirection: "row",
+      justifyContent:
+        "space-between",
+      alignItems: "center",
+      marginTop: 25,
+      marginBottom: 13,
     },
 
     sectionTitle: {
       color: "#111827",
-      fontSize: 24,
+      fontSize: 21,
       fontWeight: "900",
     },
 
     sectionSubtitle: {
-      color: "#6B7280",
-      fontSize: 12,
+      color: "#9CA3AF",
+      fontSize: 11,
       marginTop: 3,
     },
 
     eventCountBadge: {
-      minWidth: 39,
-      height: 39,
+      width: 38,
+      height: 38,
       borderRadius: 13,
-
       backgroundColor:
         "#F3E8FF",
-
       justifyContent:
         "center",
-
       alignItems:
         "center",
     },
@@ -1617,187 +1471,182 @@ const styles =
       fontWeight: "900",
     },
 
-    /* CATEGORY */
+    smallCount: {
+      minWidth: 32,
+      height: 32,
+      paddingHorizontal: 8,
+      borderRadius: 10,
+      backgroundColor:
+        "#F3E8FF",
+      justifyContent:
+        "center",
+      alignItems:
+        "center",
+    },
 
-    categoryRow: {
+    smallCountText: {
+      color: "#9333EA",
+      fontWeight: "900",
+      fontSize: 11,
+    },
+
+    /* CATEGORIES */
+
+    categories: {
       paddingHorizontal: 20,
-      paddingTop: 15,
-      paddingBottom: 4,
+      paddingBottom: 3,
       gap: 9,
     },
 
-    categorySelected: {
-      height: 42,
-      paddingHorizontal: 15,
-
-      borderRadius: 21,
-
-      flexDirection:
-        "row",
-
-      alignItems:
-        "center",
-
-      gap: 6,
-    },
-
-    categorySelectedText: {
-      color: "#FFFFFF",
-      fontWeight: "800",
-      fontSize: 13,
-    },
-
-    categoryNormal: {
-      height: 42,
-      paddingHorizontal: 15,
-
+    categoryButton: {
+      minHeight: 44,
+      paddingHorizontal: 11,
+      borderRadius: 14,
+      flexDirection: "row",
+      alignItems: "center",
       backgroundColor:
         "#FFFFFF",
-
-      borderRadius: 21,
-
-      flexDirection:
-        "row",
-
-      alignItems:
-        "center",
-
-      gap: 6,
-
       borderWidth: 1,
       borderColor:
-        "#E9D5FF",
-    },
-
-    categoryNormalText: {
-      color: "#7C3AED",
-      fontWeight: "700",
-      fontSize: 13,
-    },
-
-    /* TITLES */
-
-    titleRow: {
-      marginTop: 27,
-      marginBottom: 13,
-
-      paddingHorizontal: 20,
-
-      flexDirection:
-        "row",
-
-      alignItems:
-        "center",
-
+        "#F3E8FF",
       gap: 7,
     },
 
-    contentHeading: {
-      color: "#111827",
-      fontSize: 21,
+    categoryButtonSelected: {
+      borderColor:
+        "#D8B4FE",
+      backgroundColor:
+        "#FAF5FF",
+    },
+
+    categoryIcon: {
+      width: 29,
+      height: 29,
+      borderRadius: 9,
+      backgroundColor:
+        "#F3E8FF",
+      justifyContent:
+        "center",
+      alignItems:
+        "center",
+    },
+
+    categoryIconSelected: {
+      width: 29,
+      height: 29,
+      borderRadius: 9,
+      justifyContent:
+        "center",
+      alignItems:
+        "center",
+    },
+
+    categoryText: {
+      color: "#6B7280",
+      fontWeight: "800",
+      fontSize: 11,
+    },
+
+    categoryTextSelected: {
+      color: "#7C3AED",
+    },
+
+    /* ERROR */
+
+    errorCard: {
+      marginHorizontal: 20,
+      marginTop: 20,
+      borderRadius: 18,
+      padding: 15,
+      backgroundColor:
+        "#FEF2F2",
+      borderWidth: 1,
+      borderColor:
+        "#FECACA",
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    },
+
+    errorTitle: {
+      color: "#991B1B",
       fontWeight: "900",
     },
 
-    contentSubheading: {
-      color: "#6B7280",
-      fontSize: 12,
-      marginTop: 3,
+    errorText: {
+      color: "#B91C1C",
+      fontSize: 10,
+      marginTop: 2,
     },
 
     /* FEATURED */
 
     featuredCard: {
       marginHorizontal: 20,
-
+      borderRadius: 24,
       backgroundColor:
         "#FFFFFF",
-
-      borderRadius: 25,
-
       overflow: "hidden",
-
       shadowColor:
         "#581C87",
-
-      shadowOpacity: 0.09,
-      shadowRadius: 18,
-
-      shadowOffset: {
-        width: 0,
-        height: 8,
-      },
-
+      shadowOpacity: 0.08,
+      shadowRadius: 15,
       elevation: 4,
     },
 
     featuredImageArea: {
       height: 245,
-      position:
-        "relative",
+      position: "relative",
       backgroundColor:
-        "#A855F7",
+        "#7C3AED",
     },
 
-    fullImage: {
+    featuredImage: {
       width: "100%",
       height: "100%",
+      alignItems: "center",
       justifyContent:
-        "center",
-      alignItems:
         "center",
     },
 
-    imageOverlay: {
+    featuredOverlay: {
       ...StyleSheet.absoluteFillObject,
     },
 
     featuredTop: {
-      position:
-        "absolute",
-
-      top: 15,
-      left: 15,
-      right: 15,
-
-      flexDirection:
-        "row",
-
+      position: "absolute",
+      top: 13,
+      left: 13,
+      right: 13,
+      flexDirection: "row",
       justifyContent:
         "space-between",
+      alignItems: "center",
     },
 
-    categoryBadge: {
-      flexDirection:
-        "row",
-
-      alignItems:
-        "center",
-
-      gap: 5,
-
+    featuredCategory: {
       backgroundColor:
         "rgba(124,58,237,0.92)",
-
       paddingHorizontal: 11,
       paddingVertical: 7,
-
-      borderRadius: 20,
+      borderRadius: 15,
     },
 
-    categoryBadgeText: {
+    featuredCategoryText: {
       color: "#FFFFFF",
-      fontSize: 11,
       fontWeight: "900",
+      fontSize: 10,
     },
 
     availabilityBadge: {
+      paddingHorizontal: 10,
+      paddingVertical: 7,
+      borderRadius: 15,
+    },
+
+    openBadge: {
       backgroundColor:
         "rgba(22,163,74,0.94)",
-
-      paddingHorizontal: 11,
-      paddingVertical: 7,
-
-      borderRadius: 20,
     },
 
     soldOutBadge: {
@@ -1807,175 +1656,136 @@ const styles =
 
     availabilityBadgeText: {
       color: "#FFFFFF",
-      fontSize: 10,
       fontWeight: "900",
+      fontSize: 9,
     },
 
     featuredBottom: {
-      position:
-        "absolute",
-
-      left: 17,
-      right: 17,
+      position: "absolute",
+      left: 16,
+      right: 16,
       bottom: 17,
     },
 
     featuredTitle: {
       color: "#FFFFFF",
-      fontSize: 25,
-      lineHeight: 30,
+      fontSize: 24,
+      lineHeight: 29,
       fontWeight: "900",
-
-      textShadowColor:
-        "rgba(0,0,0,0.3)",
-
-      textShadowRadius: 3,
     },
 
     featuredMeta: {
-      flexDirection:
-        "row",
-
-      alignItems:
-        "center",
-
-      gap: 6,
-
-      marginTop: 9,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+      marginTop: 8,
     },
 
     featuredMetaText: {
       color: "#FFFFFF",
+      fontSize: 11,
       fontWeight: "700",
-      fontSize: 12,
     },
 
     featuredLocation: {
       color: "#FFFFFF",
-      fontWeight: "700",
-      fontSize: 12,
       flex: 1,
+      fontSize: 11,
+      fontWeight: "700",
     },
 
     metaDot: {
       width: 4,
       height: 4,
       borderRadius: 2,
+      marginHorizontal: 3,
       backgroundColor:
         "rgba(255,255,255,0.65)",
     },
 
     featuredFooter: {
       padding: 15,
-
-      flexDirection:
-        "row",
-
+      flexDirection: "row",
+      alignItems: "center",
       justifyContent:
         "space-between",
-
-      alignItems:
-        "center",
     },
 
     featuredFooterLabel: {
       color: "#9CA3AF",
-      fontSize: 10,
-      fontWeight: "700",
-      textTransform:
-        "uppercase",
+      fontSize: 8,
+      fontWeight: "900",
+      letterSpacing: 0.6,
     },
 
     featuredFooterValue: {
       color: "#111827",
-      fontSize: 15,
+      fontSize: 12,
       fontWeight: "900",
-      marginTop: 2,
+      marginTop: 3,
     },
 
     exploreButton: {
-      height: 40,
-      paddingHorizontal: 14,
+      backgroundColor:
+        "#9333EA",
       borderRadius: 13,
-
-      flexDirection:
-        "row",
-
-      alignItems:
-        "center",
-
-      gap: 6,
+      paddingHorizontal: 13,
+      paddingVertical: 9,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
     },
 
     exploreButtonText: {
       color: "#FFFFFF",
       fontWeight: "900",
-      fontSize: 12,
+      fontSize: 11,
     },
 
-    /* COMPACT */
+    /* UPCOMING */
 
-    compactCard: {
+    upcomingCard: {
       marginHorizontal: 20,
       marginBottom: 13,
-
-      minHeight: 136,
-
+      minHeight: 150,
       backgroundColor:
         "#FFFFFF",
-
       borderRadius: 21,
-
-      padding: 11,
-
-      flexDirection:
-        "row",
-
-      alignItems:
-        "center",
-
+      flexDirection: "row",
+      overflow: "hidden",
       shadowColor:
         "#581C87",
-
       shadowOpacity: 0.05,
-      shadowRadius: 12,
-
+      shadowRadius: 10,
       elevation: 2,
     },
 
-    compactImageArea: {
-      width: 115,
-      height: 115,
-
-      borderRadius: 17,
-
-      overflow: "hidden",
-
-      position:
-        "relative",
-
+    upcomingImageArea: {
+      width: 125,
+      position: "relative",
       backgroundColor:
-        "#A855F7",
+        "#7C3AED",
     },
 
-    dateBubble: {
-      position:
-        "absolute",
-
-      top: 7,
-      left: 7,
-
-      width: 41,
-
-      backgroundColor:
-        "rgba(255,255,255,0.95)",
-
-      borderRadius: 11,
-
+    upcomingImage: {
+      width: "100%",
+      height: "100%",
+      justifyContent:
+        "center",
       alignItems:
         "center",
+    },
 
+    dateBadge: {
+      position: "absolute",
+      top: 10,
+      left: 10,
+      width: 41,
+      backgroundColor:
+        "rgba(255,255,255,0.95)",
+      borderRadius: 11,
       paddingVertical: 5,
+      alignItems: "center",
     },
 
     dateMonth: {
@@ -1990,179 +1800,89 @@ const styles =
       fontWeight: "900",
     },
 
-    compactContent: {
+    upcomingContent: {
       flex: 1,
-      marginLeft: 13,
+      padding: 13,
     },
 
-    compactCategoryRow: {
-      flexDirection:
-        "row",
-
-      alignItems:
-        "center",
-
-      justifyContent:
-        "space-between",
-
-      marginBottom: 6,
-    },
-
-    compactCategory: {
+    upcomingCategory: {
       color: "#A855F7",
-      fontSize: 11,
+      fontSize: 9,
       fontWeight: "900",
       textTransform:
         "uppercase",
+      letterSpacing: 0.5,
     },
 
-    smallAvailability: {
-      paddingHorizontal: 7,
-      paddingVertical: 4,
-
-      borderRadius: 8,
-
-      backgroundColor:
-        "#DCFCE7",
-    },
-
-    smallSoldOut: {
-      backgroundColor:
-        "#FEE2E2",
-    },
-
-    smallAvailabilityText: {
-      color: "#166534",
-      fontSize: 8,
-      fontWeight: "900",
-    },
-
-    compactTitle: {
+    upcomingTitle: {
       color: "#111827",
       fontWeight: "900",
-      fontSize: 16,
-      lineHeight: 20,
+      fontSize: 15,
+      lineHeight: 19,
+      marginTop: 3,
       marginBottom: 8,
     },
 
-    compactInfo: {
-      flexDirection:
-        "row",
-
-      alignItems:
-        "center",
-
+    upcomingMeta: {
+      flexDirection: "row",
+      alignItems: "center",
       gap: 5,
-
-      marginTop: 3,
+      marginBottom: 5,
     },
 
-    compactInfoText: {
+    upcomingMetaText: {
       color: "#6B7280",
-      fontSize: 11,
+      fontSize: 10,
       flexShrink: 1,
     },
 
-    compactArrow: {
-      width: 31,
-      height: 31,
+    upcomingFooter: {
+      marginTop: "auto",
+      paddingTop: 8,
+      borderTopWidth: 1,
+      borderTopColor:
+        "#F3E8FF",
+      flexDirection: "row",
+      justifyContent:
+        "space-between",
+      alignItems: "center",
+    },
 
-      borderRadius: 11,
-
+    seatsBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      paddingHorizontal: 7,
+      paddingVertical: 5,
+      borderRadius: 9,
       backgroundColor:
         "#F3E8FF",
-
-      justifyContent:
-        "center",
-
-      alignItems:
-        "center",
-
-      marginLeft: 5,
     },
 
-    /* ERROR */
-
-    errorCard: {
-      marginHorizontal: 20,
-      marginTop: 25,
-
-      padding: 15,
-
-      borderRadius: 19,
-
-      backgroundColor:
-        "#FFFFFF",
-
-      flexDirection:
-        "row",
-
-      alignItems:
-        "center",
-
-      borderWidth: 1,
-      borderColor:
-        "#FECACA",
-    },
-
-    errorIcon: {
-      width: 45,
-      height: 45,
-
-      borderRadius: 14,
-
-      backgroundColor:
-        "#FEF2F2",
-
-      justifyContent:
-        "center",
-
-      alignItems:
-        "center",
-    },
-
-    errorTextArea: {
-      flex: 1,
-      marginLeft: 11,
-    },
-
-    errorTitle: {
-      color: "#111827",
+    seatsText: {
+      color: "#7C3AED",
+      fontSize: 9,
       fontWeight: "900",
-    },
-
-    errorText: {
-      color: "#6B7280",
-      fontSize: 11,
-      marginTop: 2,
     },
 
     /* EMPTY */
 
     emptyCard: {
       marginHorizontal: 20,
-      marginTop: 30,
-
+      marginTop: 25,
       backgroundColor:
         "#FFFFFF",
-
       borderRadius: 24,
-
       padding: 35,
-
-      alignItems:
-        "center",
+      alignItems: "center",
     },
 
     emptyIcon: {
       width: 75,
       height: 75,
-
       borderRadius: 24,
-
       justifyContent:
         "center",
-
       alignItems:
         "center",
     },
@@ -2176,20 +1896,16 @@ const styles =
 
     emptyText: {
       color: "#6B7280",
-      textAlign:
-        "center",
+      textAlign: "center",
       marginTop: 5,
       lineHeight: 19,
     },
 
     clearFiltersButton: {
       marginTop: 17,
-
       backgroundColor:
         "#F3E8FF",
-
       borderRadius: 13,
-
       paddingHorizontal: 17,
       paddingVertical: 10,
     },
