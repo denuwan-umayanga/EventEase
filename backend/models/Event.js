@@ -4,31 +4,45 @@ const eventSchema = new mongoose.Schema(
   {
     title: {
       type: String,
-      required: [true, "Event title is required"],
+      required: true,
       trim: true,
     },
 
     description: {
       type: String,
-      required: [true, "Event description is required"],
+      required: true,
       trim: true,
+    },
+
+    category: {
+      type: String,
+      enum: [
+        "Music",
+        "Tech",
+        "Business",
+        "Sports",
+        "Social",
+        "Workshop",
+      ],
+      default: "Social",
+      required: true,
     },
 
     location: {
       type: String,
-      required: [true, "Event location is required"],
+      required: true,
       trim: true,
     },
 
     eventDate: {
       type: Date,
-      required: [true, "Event date is required"],
+      required: true,
     },
 
     capacity: {
       type: Number,
-      required: [true, "Event capacity is required"],
-      min: [1, "Capacity must be at least 1"],
+      required: true,
+      min: 1,
     },
 
     availableSeats: {
@@ -53,4 +67,7 @@ const eventSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("Event", eventSchema);
+module.exports = mongoose.model(
+  "Event",
+  eventSchema
+);

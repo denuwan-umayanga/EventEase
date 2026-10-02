@@ -20,6 +20,9 @@ import {
 
 import { API_URL } from "../../src/config/api";
 import { useAuth } from "../../src/context/AuthContext";
+import {
+  EventCategory,
+} from "../../src/types/Event";
 
 type SelectedImage = {
   uri: string;
@@ -27,35 +30,86 @@ type SelectedImage = {
   mimeType?: string | null;
 };
 
+const categories: {
+  name: EventCategory;
+  icon: any;
+}[] = [
+  {
+    name: "Music",
+    icon: "musical-notes-outline",
+  },
+  {
+    name: "Tech",
+    icon: "hardware-chip-outline",
+  },
+  {
+    name: "Business",
+    icon: "briefcase-outline",
+  },
+  {
+    name: "Sports",
+    icon: "football-outline",
+  },
+  {
+    name: "Social",
+    icon: "people-outline",
+  },
+  {
+    name: "Workshop",
+    icon: "construct-outline",
+  },
+];
+
 export default function CreateEventScreen() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] =
     useState("");
-  const [location, setLocation] = useState("");
-  const [capacity, setCapacity] = useState("");
+  const [location, setLocation] =
+    useState("");
+  const [capacity, setCapacity] =
+    useState("");
+
+  const [category, setCategory] =
+    useState<EventCategory>("Music");
 
   const [image, setImage] =
     useState<SelectedImage | null>(null);
 
-  const [eventDate, setEventDate] = useState(
-    () => {
+  const [eventDate, setEventDate] =
+    useState(() => {
       const date = new Date();
-      date.setDate(date.getDate() + 1);
-      date.setHours(18, 0, 0, 0);
+
+      date.setDate(
+        date.getDate() + 1
+      );
+
+      date.setHours(
+        18,
+        0,
+        0,
+        0
+      );
+
       return date;
-    }
-  );
+    });
 
-  const [showDatePicker, setShowDatePicker] =
+  const [
+    showDatePicker,
+    setShowDatePicker,
+  ] = useState(false);
+
+  const [
+    showTimePicker,
+    setShowTimePicker,
+  ] = useState(false);
+
+  const [loading, setLoading] =
     useState(false);
 
-  const [showTimePicker, setShowTimePicker] =
-    useState(false);
-
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] =
+    useState("");
 
   const chooseImage = async () => {
     setError("");
@@ -68,6 +122,7 @@ export default function CreateEventScreen() {
         "Permission Required",
         "Please allow EventEase to access your photos."
       );
+
       return;
     }
 
@@ -80,12 +135,15 @@ export default function CreateEventScreen() {
       });
 
     if (!result.canceled) {
-      const asset = result.assets[0];
+      const asset =
+        result.assets[0];
 
       setImage({
         uri: asset.uri,
-        fileName: asset.fileName,
-        mimeType: asset.mimeType,
+        fileName:
+          asset.fileName,
+        mimeType:
+          asset.mimeType,
       });
     }
   };
@@ -94,143 +152,18 @@ export default function CreateEventScreen() {
     setImage(null);
   };
 
-  const handleCreate = async () => {
-    setError("");
-
-    if (
-      !title.trim() ||
-      !description.trim() ||
-      !location.trim() ||
-      !capacity.trim()
-    ) {
-      setError("Please complete all fields.");
-      return;
-    }
-
-    const capacityNumber = Number(capacity);
-
-    if (
-      Number.isNaN(capacityNumber) ||
-      capacityNumber < 1
-    ) {
-      setError(
-        "Capacity must be greater than zero."
-      );
-      return;
-    }
-
-    if (eventDate <= new Date()) {
-      setError(
-        "Event date and time must be in the future."
-      );
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      const formData = new FormData();
-
-      formData.append("title", title.trim());
-      formData.append(
-        "description",
-        description.trim()
-      );
-      formData.append(
-        "location",
-        location.trim()
-      );
-      formData.append(
-        "eventDate",
-        eventDate.toISOString()
-      );
-      formData.append(
-        "capacity",
-        String(capacityNumber)
-      );
-
-      if (image) {
-        const extension =
-          image.fileName?.split(".").pop() ||
-          "jpg";
-
-        const fileName =
-          image.fileName ||
-          `event-${Date.now()}.${extension}`;
-
-        const mimeType =
-          image.mimeType || "image/jpeg";
-
-        formData.append(
-          "image",
-          {
-            uri: image.uri,
-            name: fileName,
-            type: mimeType,
-          } as any
-        );
-      }
-
-      const response = await fetch(
-        `${API_URL}/api/events`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(
-          data.message ||
-            "Unable to create event."
-        );
-        return;
-      }
-
-      Alert.alert(
-        "Event Created",
-        "Your event has been created successfully.",
-        [
-          {
-            text: "View Event",
-            onPress: () =>
-              router.replace({
-                pathname: "/events/[id]",
-                params: {
-                  id: data.event._id,
-                },
-              }),
-          },
-        ]
-      );
-    } catch (err) {
-      console.log(
-        "Create event error:",
-        err
-      );
-
-      setError(
-        "Unable to connect to the EventEase server."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleDateChange = (
     _: any,
     selectedDate?: Date
   ) => {
     setShowDatePicker(false);
 
-    if (!selectedDate) return;
+    if (!selectedDate) {
+      return;
+    }
 
-    const updatedDate = new Date(eventDate);
+    const updatedDate =
+      new Date(eventDate);
 
     updatedDate.setFullYear(
       selectedDate.getFullYear()
@@ -253,9 +186,12 @@ export default function CreateEventScreen() {
   ) => {
     setShowTimePicker(false);
 
-    if (!selectedTime) return;
+    if (!selectedTime) {
+      return;
+    }
 
-    const updatedDate = new Date(eventDate);
+    const updatedDate =
+      new Date(eventDate);
 
     updatedDate.setHours(
       selectedTime.getHours(),
@@ -267,6 +203,178 @@ export default function CreateEventScreen() {
     setEventDate(updatedDate);
   };
 
+  const handleCreate =
+    async () => {
+      setError("");
+
+      if (
+        user?.isAdmin !== true
+      ) {
+        setError(
+          "Admin access is required to create events."
+        );
+
+        return;
+      }
+
+      if (
+        !title.trim() ||
+        !description.trim() ||
+        !location.trim() ||
+        !capacity.trim()
+      ) {
+        setError(
+          "Please complete all event details."
+        );
+
+        return;
+      }
+
+      const capacityNumber =
+        Number(capacity);
+
+      if (
+        Number.isNaN(
+          capacityNumber
+        ) ||
+        capacityNumber < 1
+      ) {
+        setError(
+          "Capacity must be greater than zero."
+        );
+
+        return;
+      }
+
+      if (
+        eventDate <= new Date()
+      ) {
+        setError(
+          "Event date and time must be in the future."
+        );
+
+        return;
+      }
+
+      try {
+        setLoading(true);
+
+        const formData =
+          new FormData();
+
+        formData.append(
+          "title",
+          title.trim()
+        );
+
+        formData.append(
+          "description",
+          description.trim()
+        );
+
+        formData.append(
+          "category",
+          category
+        );
+
+        formData.append(
+          "location",
+          location.trim()
+        );
+
+        formData.append(
+          "eventDate",
+          eventDate.toISOString()
+        );
+
+        formData.append(
+          "capacity",
+          String(
+            capacityNumber
+          )
+        );
+
+        if (image) {
+          const extension =
+            image.fileName
+              ?.split(".")
+              .pop() || "jpg";
+
+          const fileName =
+            image.fileName ||
+            `event-${Date.now()}.${extension}`;
+
+          const mimeType =
+            image.mimeType ||
+            "image/jpeg";
+
+          formData.append(
+            "image",
+            {
+              uri: image.uri,
+              name: fileName,
+              type: mimeType,
+            } as any
+          );
+        }
+
+        const response =
+          await fetch(
+            `${API_URL}/api/events`,
+            {
+              method: "POST",
+
+              headers: {
+                Authorization:
+                  `Bearer ${token}`,
+              },
+
+              body: formData,
+            }
+          );
+
+        const data =
+          await response.json();
+
+        if (!response.ok) {
+          setError(
+            data.message ||
+              "Unable to create event."
+          );
+
+          return;
+        }
+
+        Alert.alert(
+          "Event Created",
+          "Your event has been published successfully.",
+          [
+            {
+              text:
+                "View Event",
+
+              onPress: () =>
+                router.replace({
+                  pathname:
+                    "/events/[id]",
+
+                  params: {
+                    id:
+                      data.event._id,
+                  },
+                }),
+            },
+          ]
+        );
+      } catch (error) {
+        setError(
+          "Unable to connect to the EventEase server."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -277,49 +385,119 @@ export default function CreateEventScreen() {
       }
     >
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={
+          styles.content
+        }
         keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={
+          false
+        }
       >
         <LinearGradient
-          colors={["#2563EB", "#4F46E5"]}
-          style={styles.headerCard}
+          colors={[
+            "#6D28D9",
+            "#A855F7",
+            "#EC4899",
+          ]}
+          start={{
+            x: 0,
+            y: 0,
+          }}
+          end={{
+            x: 1,
+            y: 1,
+          }}
+          style={styles.hero}
         >
-          <View style={styles.headerIcon}>
+          <View
+            style={
+              styles.heroIcon
+            }
+          >
             <Ionicons
-              name="calendar"
-              size={27}
+              name="add-circle-outline"
+              size={32}
               color="#FFFFFF"
             />
           </View>
 
-          <Text style={styles.headerTitle}>
-            Create New Event
+          <Text
+            style={
+              styles.heroLabel
+            }
+          >
+            ADMIN
           </Text>
 
-          <Text style={styles.headerSubtitle}>
-            Add event details and a cover image.
+          <Text
+            style={
+              styles.heroTitle
+            }
+          >
+            Create a new event
+          </Text>
+
+          <Text
+            style={
+              styles.heroSubtitle
+            }
+          >
+            Add event details,
+            category and cover
+            image.
           </Text>
         </LinearGradient>
 
-        <View style={styles.formCard}>
-          <Text style={styles.sectionLabel}>
-            Event Cover
-          </Text>
+        <View
+          style={
+            styles.formCard
+          }
+        >
+          {/* COVER IMAGE */}
+
+          <SectionTitle
+            icon="image-outline"
+            title="Event Cover"
+            subtitle="Make the event stand out"
+          />
 
           {image ? (
-            <View style={styles.imageContainer}>
+            <View
+              style={
+                styles.imageContainer
+              }
+            >
               <Image
-                source={{ uri: image.uri }}
-                style={styles.imagePreview}
+                source={{
+                  uri: image.uri,
+                }}
+                style={
+                  styles.imagePreview
+                }
+              />
+
+              <LinearGradient
+                colors={[
+                  "transparent",
+                  "rgba(17,24,39,0.65)",
+                ]}
+                style={
+                  styles.imageOverlay
+                }
               />
 
               <View
-                style={styles.imageOverlayActions}
+                style={
+                  styles.imageActions
+                }
               >
                 <Pressable
-                  style={styles.imageActionButton}
-                  onPress={chooseImage}
+                  style={
+                    styles.imageActionButton
+                  }
+                  onPress={
+                    chooseImage
+                  }
                 >
                   <Ionicons
                     name="images-outline"
@@ -328,7 +506,9 @@ export default function CreateEventScreen() {
                   />
 
                   <Text
-                    style={styles.imageActionText}
+                    style={
+                      styles.imageActionText
+                    }
                   >
                     Change
                   </Text>
@@ -339,7 +519,9 @@ export default function CreateEventScreen() {
                     styles.imageActionButton,
                     styles.removeButton,
                   ]}
-                  onPress={removeImage}
+                  onPress={
+                    removeImage
+                  }
                 >
                   <Ionicons
                     name="trash-outline"
@@ -348,7 +530,9 @@ export default function CreateEventScreen() {
                   />
 
                   <Text
-                    style={styles.imageActionText}
+                    style={
+                      styles.imageActionText
+                    }
                   >
                     Remove
                   </Text>
@@ -357,40 +541,54 @@ export default function CreateEventScreen() {
             </View>
           ) : (
             <Pressable
-              style={styles.uploadBox}
-              onPress={chooseImage}
+              style={
+                styles.uploadBox
+              }
+              onPress={
+                chooseImage
+              }
             >
-              <View style={styles.uploadIcon}>
+              <LinearGradient
+                colors={[
+                  "#F3E8FF",
+                  "#FCE7F3",
+                ]}
+                style={
+                  styles.uploadIcon
+                }
+              >
                 <Ionicons
                   name="cloud-upload-outline"
                   size={31}
-                  color="#2563EB"
+                  color="#9333EA"
                 />
-              </View>
+              </LinearGradient>
 
-              <Text style={styles.uploadTitle}>
-                Add Event Cover
+              <Text
+                style={
+                  styles.uploadTitle
+                }
+              >
+                Upload cover image
               </Text>
 
-              <Text style={styles.uploadSubtitle}>
-                Choose a JPG, PNG or WEBP image
+              <Text
+                style={
+                  styles.uploadSubtitle
+                }
+              >
+                JPG, PNG or WEBP
               </Text>
-
-              <View style={styles.uploadButton}>
-                <Ionicons
-                  name="images-outline"
-                  size={17}
-                  color="#2563EB"
-                />
-
-                <Text
-                  style={styles.uploadButtonText}
-                >
-                  Choose Image
-                </Text>
-              </View>
             </Pressable>
           )}
+
+          {/* BASIC INFO */}
+
+          <SectionTitle
+            icon="information-circle-outline"
+            title="Event Details"
+            subtitle="Tell users about the event"
+          />
 
           <FieldLabel
             icon="text-outline"
@@ -399,9 +597,12 @@ export default function CreateEventScreen() {
 
           <TextInput
             style={styles.input}
-            placeholder="e.g. SLIIT Tech Conference"
+            placeholder="e.g. Melbourne Music Night"
+            placeholderTextColor="#9CA3AF"
             value={title}
-            onChangeText={setTitle}
+            onChangeText={
+              setTitle
+            }
           />
 
           <FieldLabel
@@ -412,14 +613,116 @@ export default function CreateEventScreen() {
           <TextInput
             style={[
               styles.input,
-              styles.multilineInput,
+              styles.descriptionInput,
             ]}
-            placeholder="Tell people about the event..."
+            placeholder="Describe the event..."
+            placeholderTextColor="#9CA3AF"
             multiline
             textAlignVertical="top"
-            value={description}
-            onChangeText={setDescription}
+            value={
+              description
+            }
+            onChangeText={
+              setDescription
+            }
           />
+
+          {/* CATEGORY */}
+
+          <FieldLabel
+            icon="grid-outline"
+            text="Category"
+          />
+
+          <View
+            style={
+              styles.categoryGrid
+            }
+          >
+            {categories.map(
+              (item) => {
+                const selected =
+                  category ===
+                  item.name;
+
+                return (
+                  <Pressable
+                    key={
+                      item.name
+                    }
+                    style={
+                      styles.categoryWrapper
+                    }
+                    onPress={() =>
+                      setCategory(
+                        item.name
+                      )
+                    }
+                  >
+                    {selected ? (
+                      <LinearGradient
+                        colors={[
+                          "#7C3AED",
+                          "#EC4899",
+                        ]}
+                        style={
+                          styles.categorySelected
+                        }
+                      >
+                        <Ionicons
+                          name={
+                            item.icon
+                          }
+                          size={
+                            20
+                          }
+                          color="#FFFFFF"
+                        />
+
+                        <Text
+                          style={
+                            styles.categorySelectedText
+                          }
+                        >
+                          {
+                            item.name
+                          }
+                        </Text>
+                      </LinearGradient>
+                    ) : (
+                      <View
+                        style={
+                          styles.categoryNormal
+                        }
+                      >
+                        <Ionicons
+                          name={
+                            item.icon
+                          }
+                          size={
+                            20
+                          }
+                          color="#9333EA"
+                        />
+
+                        <Text
+                          style={
+                            styles.categoryNormalText
+                          }
+                        >
+                          {
+                            item.name
+                          }
+                        </Text>
+                      </View>
+                    )}
+                  </Pressable>
+                );
+              }
+            )}
+          </View>
+
+          {/* LOCATION */}
 
           <FieldLabel
             icon="location-outline"
@@ -429,34 +732,62 @@ export default function CreateEventScreen() {
           <TextInput
             style={styles.input}
             placeholder="Event location"
+            placeholderTextColor="#9CA3AF"
             value={location}
-            onChangeText={setLocation}
+            onChangeText={
+              setLocation
+            }
           />
 
-          <Text style={styles.sectionLabel}>
-            Schedule
-          </Text>
+          {/* SCHEDULE */}
 
-          <View style={styles.twoColumns}>
-            <View style={styles.flexField}>
+          <SectionTitle
+            icon="calendar-outline"
+            title="Schedule"
+            subtitle="Choose the date and time"
+          />
+
+          <View
+            style={
+              styles.twoColumns
+            }
+          >
+            <View
+              style={
+                styles.flexField
+              }
+            >
               <FieldLabel
                 icon="calendar-outline"
                 text="Date"
               />
 
               <Pressable
-                style={styles.pickerButton}
+                style={
+                  styles.pickerButton
+                }
                 onPress={() =>
-                  setShowDatePicker(true)
+                  setShowDatePicker(
+                    true
+                  )
                 }
               >
-                <Text style={styles.pickerText}>
+                <Text
+                  style={
+                    styles.pickerText
+                  }
+                >
                   {eventDate.toLocaleDateString(
                     "en-GB",
                     {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
+                      day:
+                        "2-digit",
+
+                      month:
+                        "short",
+
+                      year:
+                        "numeric",
                     }
                   )}
                 </Text>
@@ -464,29 +795,44 @@ export default function CreateEventScreen() {
                 <Ionicons
                   name="chevron-down"
                   size={17}
-                  color="#64748B"
+                  color="#A855F7"
                 />
               </Pressable>
             </View>
 
-            <View style={styles.flexField}>
+            <View
+              style={
+                styles.flexField
+              }
+            >
               <FieldLabel
                 icon="time-outline"
                 text="Time"
               />
 
               <Pressable
-                style={styles.pickerButton}
+                style={
+                  styles.pickerButton
+                }
                 onPress={() =>
-                  setShowTimePicker(true)
+                  setShowTimePicker(
+                    true
+                  )
                 }
               >
-                <Text style={styles.pickerText}>
+                <Text
+                  style={
+                    styles.pickerText
+                  }
+                >
                   {eventDate.toLocaleTimeString(
                     "en-US",
                     {
-                      hour: "2-digit",
-                      minute: "2-digit",
+                      hour:
+                        "2-digit",
+
+                      minute:
+                        "2-digit",
                     }
                   )}
                 </Text>
@@ -494,7 +840,7 @@ export default function CreateEventScreen() {
                 <Ionicons
                   name="chevron-down"
                   size={17}
-                  color="#64748B"
+                  color="#A855F7"
                 />
               </Pressable>
             </View>
@@ -502,20 +848,32 @@ export default function CreateEventScreen() {
 
           {showDatePicker && (
             <DateTimePicker
-              value={eventDate}
+              value={
+                eventDate
+              }
               mode="date"
-              minimumDate={new Date()}
-              onChange={handleDateChange}
+              minimumDate={
+                new Date()
+              }
+              onChange={
+                handleDateChange
+              }
             />
           )}
 
           {showTimePicker && (
             <DateTimePicker
-              value={eventDate}
+              value={
+                eventDate
+              }
               mode="time"
-              onChange={handleTimeChange}
+              onChange={
+                handleTimeChange
+              }
             />
           )}
+
+          {/* CAPACITY */}
 
           <FieldLabel
             icon="people-outline"
@@ -524,33 +882,68 @@ export default function CreateEventScreen() {
 
           <TextInput
             style={styles.input}
-            placeholder="Maximum attendees"
+            placeholder="Maximum number of attendees"
+            placeholderTextColor="#9CA3AF"
             keyboardType="number-pad"
-            value={capacity}
-            onChangeText={setCapacity}
+            value={
+              capacity
+            }
+            onChangeText={
+              setCapacity
+            }
           />
 
+          {/* ERROR */}
+
           {error ? (
-            <View style={styles.errorBox}>
+            <View
+              style={
+                styles.errorBox
+              }
+            >
               <Ionicons
                 name="alert-circle-outline"
                 size={19}
                 color="#DC2626"
               />
 
-              <Text style={styles.errorText}>
+              <Text
+                style={
+                  styles.errorText
+                }
+              >
                 {error}
               </Text>
             </View>
           ) : null}
 
+          {/* CREATE */}
+
           <Pressable
-            onPress={handleCreate}
-            disabled={loading}
+            disabled={
+              loading
+            }
+            onPress={
+              handleCreate
+            }
           >
             <LinearGradient
-              colors={["#2563EB", "#4F46E5"]}
-              style={styles.createButton}
+              colors={[
+                "#7C3AED",
+                "#A855F7",
+                "#EC4899",
+              ]}
+              start={{
+                x: 0,
+                y: 0,
+              }}
+              end={{
+                x: 1,
+                y: 1,
+              }}
+              style={
+                styles.createButton
+              }
             >
               {loading ? (
                 <ActivityIndicator
@@ -558,19 +951,31 @@ export default function CreateEventScreen() {
                 />
               ) : (
                 <>
-                  <Ionicons
-                    name="add-circle-outline"
-                    size={22}
-                    color="#FFFFFF"
-                  />
+                  <View
+                    style={
+                      styles.createIcon
+                    }
+                  >
+                    <Ionicons
+                      name="sparkles"
+                      size={20}
+                      color="#FFFFFF"
+                    />
+                  </View>
 
                   <Text
                     style={
                       styles.createButtonText
                     }
                   >
-                    Create Event
+                    Publish Event
                   </Text>
+
+                  <Ionicons
+                    name="arrow-forward"
+                    size={20}
+                    color="#FFFFFF"
+                  />
                 </>
               )}
             </LinearGradient>
@@ -578,6 +983,58 @@ export default function CreateEventScreen() {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+  );
+}
+
+function SectionTitle({
+  icon,
+  title,
+  subtitle,
+}: {
+  icon: any;
+  title: string;
+  subtitle: string;
+}) {
+  return (
+    <View
+      style={
+        styles.sectionTitleRow
+      }
+    >
+      <LinearGradient
+        colors={[
+          "#F3E8FF",
+          "#FCE7F3",
+        ]}
+        style={
+          styles.sectionIcon
+        }
+      >
+        <Ionicons
+          name={icon}
+          size={20}
+          color="#9333EA"
+        />
+      </LinearGradient>
+
+      <View>
+        <Text
+          style={
+            styles.sectionTitle
+          }
+        >
+          {title}
+        </Text>
+
+        <Text
+          style={
+            styles.sectionSubtitle
+          }
+        >
+          {subtitle}
+        </Text>
+      </View>
+    </View>
   );
 }
 
@@ -589,252 +1046,471 @@ function FieldLabel({
   text: string;
 }) {
   return (
-    <View style={styles.labelRow}>
+    <View
+      style={
+        styles.labelRow
+      }
+    >
       <Ionicons
         name={icon}
-        size={17}
-        color="#2563EB"
+        size={16}
+        color="#A855F7"
       />
 
-      <Text style={styles.label}>
+      <Text
+        style={styles.label}
+      >
         {text}
       </Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
-  },
+const styles =
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor:
+        "#FAF7FF",
+    },
 
-  content: {
-    padding: 18,
-    paddingBottom: 40,
-  },
+    content: {
+      paddingBottom: 45,
+    },
 
-  headerCard: {
-    borderRadius: 24,
-    padding: 22,
-    marginBottom: 18,
-  },
+    hero: {
+      paddingHorizontal: 22,
+      paddingTop: 32,
+      paddingBottom: 46,
 
-  headerIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 16,
-    backgroundColor:
-      "rgba(255,255,255,0.18)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 18,
-  },
+      borderBottomLeftRadius:
+        34,
 
-  headerTitle: {
-    color: "#FFFFFF",
-    fontSize: 26,
-    fontWeight: "900",
-  },
+      borderBottomRightRadius:
+        34,
+    },
 
-  headerSubtitle: {
-    color: "#DBEAFE",
-    marginTop: 6,
-    lineHeight: 20,
-  },
+    heroIcon: {
+      width: 54,
+      height: 54,
+      borderRadius: 18,
 
-  formCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    padding: 20,
-    elevation: 2,
-  },
+      backgroundColor:
+        "rgba(255,255,255,0.17)",
 
-  sectionLabel: {
-    color: "#0F172A",
-    fontSize: 17,
-    fontWeight: "900",
-    marginBottom: 13,
-  },
+      justifyContent:
+        "center",
 
-  uploadBox: {
-    borderWidth: 1.5,
-    borderStyle: "dashed",
-    borderColor: "#BFDBFE",
-    backgroundColor: "#F8FAFF",
-    borderRadius: 18,
-    minHeight: 190,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-    marginBottom: 24,
-  },
+      alignItems:
+        "center",
+    },
 
-  uploadIcon: {
-    width: 58,
-    height: 58,
-    borderRadius: 18,
-    backgroundColor: "#EFF6FF",
-    justifyContent: "center",
-    alignItems: "center",
-  },
+    heroLabel: {
+      color: "#F5D0FE",
+      fontSize: 10,
+      fontWeight: "900",
+      letterSpacing: 1.3,
+      marginTop: 16,
+    },
 
-  uploadTitle: {
-    fontSize: 17,
-    fontWeight: "900",
-    color: "#0F172A",
-    marginTop: 13,
-  },
+    heroTitle: {
+      color: "#FFFFFF",
+      fontSize: 29,
+      fontWeight: "900",
+      marginTop: 5,
+    },
 
-  uploadSubtitle: {
-    color: "#64748B",
-    marginTop: 5,
-    fontSize: 12,
-  },
+    heroSubtitle: {
+      color: "#FCE7F3",
+      marginTop: 6,
+      lineHeight: 20,
+    },
 
-  uploadButton: {
-    marginTop: 15,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "#EFF6FF",
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 12,
-  },
+    formCard: {
+      marginHorizontal: 18,
+      marginTop: -23,
 
-  uploadButtonText: {
-    color: "#2563EB",
-    fontWeight: "800",
-  },
+      backgroundColor:
+        "#FFFFFF",
 
-  imageContainer: {
-    borderRadius: 18,
-    overflow: "hidden",
-    marginBottom: 24,
-  },
+      borderRadius: 27,
+      padding: 20,
 
-  imagePreview: {
-    width: "100%",
-    height: 190,
-    backgroundColor: "#E2E8F0",
-  },
+      shadowColor:
+        "#581C87",
 
-  imageOverlayActions: {
-    position: "absolute",
-    right: 10,
-    bottom: 10,
-    flexDirection: "row",
-    gap: 8,
-  },
+      shadowOpacity: 0.08,
+      shadowRadius: 18,
 
-  imageActionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    backgroundColor:
-      "rgba(15,23,42,0.78)",
-    paddingHorizontal: 11,
-    paddingVertical: 8,
-    borderRadius: 11,
-  },
+      shadowOffset: {
+        width: 0,
+        height: 7,
+      },
 
-  removeButton: {
-    backgroundColor:
-      "rgba(185,28,28,0.88)",
-  },
+      elevation: 4,
+    },
 
-  imageActionText: {
-    color: "#FFFFFF",
-    fontWeight: "800",
-    fontSize: 12,
-  },
+    sectionTitleRow: {
+      flexDirection:
+        "row",
 
-  labelRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7,
-    marginBottom: 8,
-  },
+      alignItems:
+        "center",
 
-  label: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#334155",
-  },
+      marginBottom: 15,
+      marginTop: 5,
+    },
 
-  input: {
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 14,
-    backgroundColor: "#F8FAFC",
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    fontSize: 15,
-    color: "#0F172A",
-    marginBottom: 18,
-  },
+    sectionIcon: {
+      width: 43,
+      height: 43,
 
-  multilineInput: {
-    minHeight: 110,
-  },
+      borderRadius: 14,
 
-  twoColumns: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 18,
-  },
+      justifyContent:
+        "center",
 
-  flexField: {
-    flex: 1,
-  },
+      alignItems:
+        "center",
 
-  pickerButton: {
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#F8FAFC",
-    borderRadius: 14,
-    paddingHorizontal: 13,
-    minHeight: 50,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
+      marginRight: 10,
+    },
 
-  pickerText: {
-    color: "#0F172A",
-    fontWeight: "600",
-    fontSize: 14,
-  },
+    sectionTitle: {
+      color: "#111827",
+      fontSize: 17,
+      fontWeight: "900",
+    },
 
-  errorBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    padding: 12,
-    backgroundColor: "#FEF2F2",
-    borderRadius: 12,
-    marginBottom: 16,
-  },
+    sectionSubtitle: {
+      color: "#9CA3AF",
+      fontSize: 11,
+      marginTop: 2,
+    },
 
-  errorText: {
-    color: "#B91C1C",
-    flex: 1,
-    lineHeight: 19,
-  },
+    uploadBox: {
+      minHeight: 185,
 
-  createButton: {
-    minHeight: 55,
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 8,
-  },
+      borderWidth: 1.5,
+      borderStyle:
+        "dashed",
 
-  createButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "900",
-  },
-});
+      borderColor:
+        "#D8B4FE",
+
+      backgroundColor:
+        "#FCFAFF",
+
+      borderRadius: 20,
+
+      justifyContent:
+        "center",
+
+      alignItems:
+        "center",
+
+      padding: 20,
+
+      marginBottom: 27,
+    },
+
+    uploadIcon: {
+      width: 62,
+      height: 62,
+      borderRadius: 20,
+
+      justifyContent:
+        "center",
+
+      alignItems:
+        "center",
+    },
+
+    uploadTitle: {
+      color: "#111827",
+      fontSize: 16,
+      fontWeight: "900",
+      marginTop: 12,
+    },
+
+    uploadSubtitle: {
+      color: "#9CA3AF",
+      fontSize: 11,
+      marginTop: 4,
+    },
+
+    imageContainer: {
+      height: 205,
+      borderRadius: 20,
+
+      overflow: "hidden",
+
+      position:
+        "relative",
+
+      marginBottom: 27,
+    },
+
+    imagePreview: {
+      width: "100%",
+      height: "100%",
+    },
+
+    imageOverlay: {
+      ...StyleSheet.absoluteFillObject,
+    },
+
+    imageActions: {
+      position:
+        "absolute",
+
+      bottom: 10,
+      right: 10,
+
+      flexDirection:
+        "row",
+
+      gap: 8,
+    },
+
+    imageActionButton: {
+      flexDirection:
+        "row",
+
+      alignItems:
+        "center",
+
+      gap: 6,
+
+      paddingHorizontal: 12,
+      paddingVertical: 9,
+
+      borderRadius: 12,
+
+      backgroundColor:
+        "rgba(88,28,135,0.88)",
+    },
+
+    removeButton: {
+      backgroundColor:
+        "rgba(185,28,28,0.90)",
+    },
+
+    imageActionText: {
+      color: "#FFFFFF",
+      fontWeight: "800",
+      fontSize: 12,
+    },
+
+    labelRow: {
+      flexDirection:
+        "row",
+
+      alignItems:
+        "center",
+
+      gap: 6,
+
+      marginBottom: 8,
+    },
+
+    label: {
+      color: "#374151",
+      fontSize: 13,
+      fontWeight: "800",
+    },
+
+    input: {
+      borderWidth: 1,
+      borderColor:
+        "#E9D5FF",
+
+      backgroundColor:
+        "#FCFAFF",
+
+      borderRadius: 15,
+
+      paddingHorizontal: 14,
+      paddingVertical: 13,
+
+      color: "#111827",
+      fontSize: 14,
+
+      marginBottom: 18,
+    },
+
+    descriptionInput: {
+      minHeight: 105,
+    },
+
+    categoryGrid: {
+      flexDirection:
+        "row",
+
+      flexWrap: "wrap",
+
+      gap: 9,
+
+      marginBottom: 22,
+    },
+
+    categoryWrapper: {
+      width: "31%",
+    },
+
+    categorySelected: {
+      height: 76,
+
+      borderRadius: 17,
+
+      justifyContent:
+        "center",
+
+      alignItems:
+        "center",
+
+      gap: 6,
+    },
+
+    categorySelectedText: {
+      color: "#FFFFFF",
+      fontWeight: "900",
+      fontSize: 11,
+    },
+
+    categoryNormal: {
+      height: 76,
+
+      borderRadius: 17,
+
+      borderWidth: 1,
+      borderColor:
+        "#E9D5FF",
+
+      backgroundColor:
+        "#FCFAFF",
+
+      justifyContent:
+        "center",
+
+      alignItems:
+        "center",
+
+      gap: 6,
+    },
+
+    categoryNormalText: {
+      color: "#7C3AED",
+      fontWeight: "800",
+      fontSize: 11,
+    },
+
+    twoColumns: {
+      flexDirection:
+        "row",
+
+      gap: 10,
+
+      marginBottom: 18,
+    },
+
+    flexField: {
+      flex: 1,
+    },
+
+    pickerButton: {
+      minHeight: 51,
+
+      borderWidth: 1,
+      borderColor:
+        "#E9D5FF",
+
+      backgroundColor:
+        "#FCFAFF",
+
+      borderRadius: 15,
+
+      paddingHorizontal: 12,
+
+      flexDirection:
+        "row",
+
+      alignItems:
+        "center",
+
+      justifyContent:
+        "space-between",
+    },
+
+    pickerText: {
+      color: "#111827",
+      fontWeight: "700",
+      fontSize: 13,
+    },
+
+    errorBox: {
+      flexDirection:
+        "row",
+
+      alignItems:
+        "center",
+
+      gap: 8,
+
+      backgroundColor:
+        "#FEF2F2",
+
+      padding: 12,
+
+      borderRadius: 13,
+
+      marginBottom: 15,
+    },
+
+    errorText: {
+      flex: 1,
+      color: "#B91C1C",
+      lineHeight: 18,
+    },
+
+    createButton: {
+      minHeight: 59,
+
+      borderRadius: 18,
+
+      flexDirection:
+        "row",
+
+      alignItems:
+        "center",
+
+      justifyContent:
+        "center",
+
+      gap: 9,
+
+      marginTop: 4,
+    },
+
+    createIcon: {
+      width: 31,
+      height: 31,
+
+      borderRadius: 10,
+
+      backgroundColor:
+        "rgba(255,255,255,0.16)",
+
+      justifyContent:
+        "center",
+
+      alignItems:
+        "center",
+    },
+
+    createButtonText: {
+      color: "#FFFFFF",
+      fontWeight: "900",
+      fontSize: 16,
+    },
+  });

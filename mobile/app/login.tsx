@@ -1,235 +1,661 @@
-import { router } from "expo-router";
-import { useState } from "react";
+import {
+  Ionicons,
+} from "@expo/vector-icons";
+import {
+  LinearGradient,
+} from "expo-linear-gradient";
+import {
+  router,
+} from "expo-router";
+import React, {
+  useState,
+} from "react";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
 
-import { API_URL } from "../src/config/api";
-import { useAuth } from "../src/context/AuthContext";
+import {
+  API_URL,
+} from "../src/config/api";
+import {
+  useAuth,
+} from "../src/context/AuthContext";
 
 export default function LoginScreen() {
-  const { signIn } = useAuth();
+  const {
+    signIn,
+  } = useAuth();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [
+    email,
+    setEmail,
+  ] = useState("");
 
-  const handleLogin = async () => {
-    setError("");
+  const [
+    password,
+    setPassword,
+  ] = useState("");
 
-    if (!email.trim() || !password) {
-      setError("Email and password are required.");
-      return;
-    }
+  const [
+    showPassword,
+    setShowPassword,
+  ] = useState(false);
 
-    try {
-      setLoading(true);
+  const [
+    loading,
+    setLoading,
+  ] = useState(false);
 
-      const response = await fetch(
-        `${API_URL}/api/auth/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: email.trim(),
-            password,
-          }),
-        }
-      );
+  const [
+    error,
+    setError,
+  ] = useState("");
 
-      const data = await response.json();
+  const handleLogin =
+    async () => {
+      setError("");
 
-      if (!response.ok) {
+      if (
+        !email.trim() ||
+        !password
+      ) {
         setError(
-          data.message || "Unable to login."
+          "Please enter your email and password."
         );
+
         return;
       }
 
-      await signIn(data.token, data.user);
+      try {
+        setLoading(true);
 
-      router.replace("/home");
-    } catch (error) {
-      Alert.alert(
-        "Connection Error",
-        "Unable to connect to the EventEase server."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+        const response =
+          await fetch(
+            `${API_URL}/api/auth/login`,
+            {
+              method:
+                "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+
+              body:
+                JSON.stringify({
+                  email:
+                    email
+                      .trim()
+                      .toLowerCase(),
+
+                  password,
+                }),
+            }
+          );
+
+        const data =
+          await response.json();
+
+        if (!response.ok) {
+          setError(
+            data.message ||
+              "Unable to login."
+          );
+
+          return;
+        }
+
+        await signIn(
+          data.token,
+          data.user
+        );
+
+        if (
+          data.user
+            .isAdmin === true
+        ) {
+          router.replace(
+            "/admin" as any
+          );
+        } else {
+          router.replace(
+            "/home"
+          );
+        }
+      } catch (error) {
+        setError(
+          "Unable to connect to the EventEase server."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={
+        styles.container
+      }
       behavior={
-        Platform.OS === "ios" ? "padding" : undefined
+        Platform.OS ===
+        "ios"
+          ? "padding"
+          : undefined
       }
     >
-      <View style={styles.card}>
-        <Text style={styles.logo}>EventEase</Text>
-
-        <Text style={styles.title}>
-          Welcome Back
-        </Text>
-
-        <Text style={styles.subtitle}>
-          Sign in to discover and manage events.
-        </Text>
-
-        <Text style={styles.label}>Email</Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="Enter your email"
-          autoCapitalize="none"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-        />
-
-        <Text style={styles.label}>Password</Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="Enter your password"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
-
-        {error ? (
-          <Text style={styles.error}>{error}</Text>
-        ) : null}
-
-        <Pressable
-          style={styles.primaryButton}
-          onPress={handleLogin}
-          disabled={loading}
+      <ScrollView
+        contentContainerStyle={
+          styles.content
+        }
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={
+          false
+        }
+      >
+        <LinearGradient
+          colors={[
+            "#7C3AED",
+            "#A855F7",
+            "#EC4899",
+          ]}
+          style={styles.hero}
         >
-          {loading ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <Text style={styles.primaryButtonText}>
-              Login
-            </Text>
-          )}
-        </Pressable>
+          <View
+            style={
+              styles.logoBox
+            }
+          >
+            <Ionicons
+              name="ticket"
+              size={34}
+              color="#FFFFFF"
+            />
+          </View>
 
-        <View style={styles.registerRow}>
-          <Text style={styles.normalText}>
-            Don't have an account?
+          <Text
+            style={
+              styles.brand
+            }
+          >
+            EventEase
           </Text>
 
-          <Pressable
-            onPress={() => router.push("/register")}
+          <Text
+            style={
+              styles.heroTitle
+            }
           >
-            <Text style={styles.link}>
-              {" "}
-              Register
-            </Text>
+            Discover moments
+            worth remembering.
+          </Text>
+
+          <Text
+            style={
+              styles.heroSubtitle
+            }
+          >
+            Find events,
+            reserve your seats
+            and enjoy the
+            experience.
+          </Text>
+        </LinearGradient>
+
+        <View
+          style={
+            styles.formCard
+          }
+        >
+          <Text
+            style={
+              styles.title
+            }
+          >
+            Welcome back
+          </Text>
+
+          <Text
+            style={
+              styles.subtitle
+            }
+          >
+            Sign in to continue
+            to EventEase
+          </Text>
+
+          <View
+            style={
+              styles.inputBox
+            }
+          >
+            <Ionicons
+              name="mail-outline"
+              size={20}
+              color="#A855F7"
+            />
+
+            <TextInput
+              style={
+                styles.input
+              }
+              placeholder="Email address"
+              placeholderTextColor="#9CA3AF"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={
+                setEmail
+              }
+            />
+          </View>
+
+          <View
+            style={
+              styles.inputBox
+            }
+          >
+            <Ionicons
+              name="lock-closed-outline"
+              size={20}
+              color="#A855F7"
+            />
+
+            <TextInput
+              style={
+                styles.input
+              }
+              placeholder="Password"
+              placeholderTextColor="#9CA3AF"
+              secureTextEntry={
+                !showPassword
+              }
+              value={password}
+              onChangeText={
+                setPassword
+              }
+            />
+
+            <Pressable
+              onPress={() =>
+                setShowPassword(
+                  !showPassword
+                )
+              }
+            >
+              <Ionicons
+                name={
+                  showPassword
+                    ? "eye-off-outline"
+                    : "eye-outline"
+                }
+                size={21}
+                color="#9CA3AF"
+              />
+            </Pressable>
+          </View>
+
+          {error ? (
+            <View
+              style={
+                styles.errorBox
+              }
+            >
+              <Ionicons
+                name="alert-circle-outline"
+                size={18}
+                color="#DC2626"
+              />
+
+              <Text
+                style={
+                  styles.errorText
+                }
+              >
+                {error}
+              </Text>
+            </View>
+          ) : null}
+
+          <Pressable
+            disabled={loading}
+            onPress={
+              handleLogin
+            }
+          >
+            <LinearGradient
+              colors={[
+                "#7C3AED",
+                "#A855F7",
+                "#EC4899",
+              ]}
+              start={{
+                x: 0,
+                y: 0,
+              }}
+              end={{
+                x: 1,
+                y: 1,
+              }}
+              style={
+                styles.loginButton
+              }
+            >
+              {loading ? (
+                <ActivityIndicator
+                  color="#FFFFFF"
+                />
+              ) : (
+                <>
+                  <Text
+                    style={
+                      styles.loginText
+                    }
+                  >
+                    Sign In
+                  </Text>
+
+                  <Ionicons
+                    name="arrow-forward"
+                    size={20}
+                    color="#FFFFFF"
+                  />
+                </>
+              )}
+            </LinearGradient>
           </Pressable>
+
+          <View
+            style={
+              styles.registerRow
+            }
+          >
+            <Text
+              style={
+                styles.registerLabel
+              }
+            >
+              New to
+              EventEase?
+            </Text>
+
+            <Pressable
+              onPress={() =>
+                router.push(
+                  "/register"
+                )
+              }
+            >
+              <Text
+                style={
+                  styles.registerLink
+                }
+              >
+                Create account
+              </Text>
+            </Pressable>
+          </View>
+
+          <View
+            style={
+              styles.adminHint
+            }
+          >
+            <Ionicons
+              name="shield-checkmark-outline"
+              size={17}
+              color="#7C3AED"
+            />
+
+            <Text
+              style={
+                styles.adminHintText
+              }
+            >
+              Administrators use
+              the same secure
+              sign-in screen.
+            </Text>
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#EFF6FF",
-    justifyContent: "center",
-    padding: 24,
-  },
+const styles =
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor:
+        "#F8F5FF",
+    },
 
-  card: {
-    backgroundColor: "#FFFFFF",
-    padding: 24,
-    borderRadius: 20,
-  },
+    content: {
+      flexGrow: 1,
+    },
 
-  logo: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#2563EB",
-    textAlign: "center",
-    marginBottom: 25,
-  },
+    hero: {
+      minHeight: 330,
+      paddingHorizontal: 26,
+      paddingTop: 64,
+      paddingBottom: 80,
 
-  title: {
-    fontSize: 26,
-    fontWeight: "bold",
-    color: "#0F172A",
-  },
+      borderBottomLeftRadius:
+        42,
 
-  subtitle: {
-    fontSize: 15,
-    color: "#64748B",
-    marginTop: 6,
-    marginBottom: 25,
-  },
+      borderBottomRightRadius:
+        42,
+    },
 
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#334155",
-    marginBottom: 7,
-  },
+    logoBox: {
+      width: 58,
+      height: 58,
+      borderRadius: 19,
 
-  input: {
-    borderWidth: 1,
-    borderColor: "#CBD5E1",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    marginBottom: 17,
-    fontSize: 16,
-    backgroundColor: "#FFFFFF",
-  },
+      backgroundColor:
+        "rgba(255,255,255,0.18)",
 
-  error: {
-    color: "#DC2626",
-    marginBottom: 15,
-  },
+      justifyContent:
+        "center",
 
-  primaryButton: {
-    backgroundColor: "#2563EB",
-    paddingVertical: 15,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 4,
-  },
+      alignItems: "center",
+    },
 
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
+    brand: {
+      color: "#FFFFFF",
+      fontSize: 19,
+      fontWeight: "900",
+      marginTop: 15,
+      letterSpacing: 0.5,
+    },
 
-  registerRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 22,
-  },
+    heroTitle: {
+      color: "#FFFFFF",
+      fontSize: 31,
+      lineHeight: 38,
+      fontWeight: "900",
+      marginTop: 22,
+      maxWidth: 330,
+    },
 
-  normalText: {
-    color: "#64748B",
-  },
+    heroSubtitle: {
+      color: "#FCE7F3",
+      lineHeight: 22,
+      marginTop: 12,
+      maxWidth: 300,
+    },
 
-  link: {
-    color: "#2563EB",
-    fontWeight: "bold",
-  },
-});
+    formCard: {
+      marginHorizontal: 20,
+      marginTop: -42,
+
+      backgroundColor:
+        "#FFFFFF",
+
+      borderRadius: 28,
+      padding: 23,
+
+      shadowColor:
+        "#4C1D95",
+
+      shadowOpacity: 0.1,
+      shadowRadius: 20,
+
+      shadowOffset: {
+        width: 0,
+        height: 8,
+      },
+
+      elevation: 5,
+
+      marginBottom: 30,
+    },
+
+    title: {
+      color: "#111827",
+      fontSize: 25,
+      fontWeight: "900",
+    },
+
+    subtitle: {
+      color: "#6B7280",
+      marginTop: 5,
+      marginBottom: 22,
+    },
+
+    inputBox: {
+      minHeight: 56,
+
+      borderWidth: 1,
+      borderColor:
+        "#E9D5FF",
+
+      backgroundColor:
+        "#FCFAFF",
+
+      borderRadius: 17,
+
+      flexDirection:
+        "row",
+
+      alignItems: "center",
+
+      paddingHorizontal:
+        15,
+
+      marginBottom: 13,
+
+      gap: 10,
+    },
+
+    input: {
+      flex: 1,
+      color: "#111827",
+      fontSize: 15,
+    },
+
+    errorBox: {
+      flexDirection:
+        "row",
+
+      gap: 7,
+
+      backgroundColor:
+        "#FEF2F2",
+
+      padding: 12,
+
+      borderRadius: 13,
+      marginBottom: 14,
+
+      alignItems:
+        "center",
+    },
+
+    errorText: {
+      color: "#B91C1C",
+      flex: 1,
+      lineHeight: 18,
+    },
+
+    loginButton: {
+      minHeight: 57,
+
+      borderRadius: 18,
+
+      flexDirection:
+        "row",
+
+      justifyContent:
+        "center",
+
+      alignItems:
+        "center",
+
+      gap: 8,
+
+      marginTop: 3,
+    },
+
+    loginText: {
+      color: "#FFFFFF",
+      fontWeight: "900",
+      fontSize: 16,
+    },
+
+    registerRow: {
+      marginTop: 22,
+
+      flexDirection:
+        "row",
+
+      justifyContent:
+        "center",
+
+      gap: 5,
+    },
+
+    registerLabel: {
+      color: "#6B7280",
+    },
+
+    registerLink: {
+      color: "#A855F7",
+      fontWeight: "900",
+    },
+
+    adminHint: {
+      marginTop: 22,
+
+      borderTopWidth: 1,
+      borderTopColor:
+        "#F3E8FF",
+
+      paddingTop: 17,
+
+      flexDirection:
+        "row",
+
+      alignItems:
+        "center",
+
+      justifyContent:
+        "center",
+
+      gap: 7,
+    },
+
+    adminHintText: {
+      color: "#7C3AED",
+      fontSize: 12,
+      fontWeight: "600",
+    },
+  });

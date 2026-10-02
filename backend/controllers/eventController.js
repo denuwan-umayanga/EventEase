@@ -1,11 +1,21 @@
 const Event = require("../models/Event");
 
-// Create event
+const ALLOWED_CATEGORIES = [
+  "Music",
+  "Tech",
+  "Business",
+  "Sports",
+  "Social",
+  "Workshop",
+];
+
+// CREATE EVENT
 const createEvent = async (req, res) => {
   try {
     const {
       title,
       description,
+      category,
       location,
       eventDate,
       capacity,
@@ -14,6 +24,7 @@ const createEvent = async (req, res) => {
     if (
       !title ||
       !description ||
+      !category ||
       !location ||
       !eventDate ||
       !capacity
@@ -21,11 +32,23 @@ const createEvent = async (req, res) => {
       return res.status(400).json({
         success: false,
         message:
-          "Title, description, location, event date and capacity are required",
+          "Title, description, category, location, event date and capacity are required",
       });
     }
 
-    const capacityNumber = Number(capacity);
+    if (
+      !ALLOWED_CATEGORIES.includes(
+        category
+      )
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid event category",
+      });
+    }
+
+    const capacityNumber =
+      Number(capacity);
 
     if (
       Number.isNaN(capacityNumber) ||
@@ -33,23 +56,32 @@ const createEvent = async (req, res) => {
     ) {
       return res.status(400).json({
         success: false,
-        message: "Capacity must be at least 1",
+        message:
+          "Capacity must be at least 1",
       });
     }
 
-    const parsedDate = new Date(eventDate);
+    const parsedDate =
+      new Date(eventDate);
 
-    if (Number.isNaN(parsedDate.getTime())) {
+    if (
+      Number.isNaN(
+        parsedDate.getTime()
+      )
+    ) {
       return res.status(400).json({
         success: false,
         message: "Invalid event date",
       });
     }
 
-    if (parsedDate <= new Date()) {
+    if (
+      parsedDate <= new Date()
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Event date must be in the future",
+        message:
+          "Event date must be in the future",
       });
     }
 
@@ -57,38 +89,56 @@ const createEvent = async (req, res) => {
       ? `/uploads/${req.file.filename}`
       : "";
 
-    const event = await Event.create({
-      title: title.trim(),
-      description: description.trim(),
-      location: location.trim(),
-      eventDate: parsedDate,
-      capacity: capacityNumber,
-      availableSeats: capacityNumber,
-      image: imagePath,
-      createdBy: req.user._id,
-    });
+    const event =
+      await Event.create({
+        title: title.trim(),
+        description:
+          description.trim(),
+        category,
+        location: location.trim(),
+        eventDate: parsedDate,
+        capacity: capacityNumber,
+        availableSeats:
+          capacityNumber,
+        image: imagePath,
+        createdBy: req.user._id,
+      });
 
     return res.status(201).json({
       success: true,
-      message: "Event created successfully",
+      message:
+        "Event created successfully",
       event,
     });
   } catch (error) {
-    console.error("Create event error:", error);
+    console.error(
+      "Create event error:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
-      message: "Server error while creating event",
+      message:
+        "Server error while creating event",
     });
   }
 };
 
-// Get all events
-const getEvents = async (req, res) => {
+// GET ALL EVENTS
+const getEvents = async (
+  req,
+  res
+) => {
   try {
-    const events = await Event.find()
-      .populate("createdBy", "name email")
-      .sort({ eventDate: 1 });
+    const events =
+      await Event.find()
+        .populate(
+          "createdBy",
+          "name email"
+        )
+        .sort({
+          eventDate: 1,
+        });
 
     return res.status(200).json({
       success: true,
@@ -96,29 +146,38 @@ const getEvents = async (req, res) => {
       events,
     });
   } catch (error) {
-    console.error("Get events error:", error);
+    console.error(
+      "Get events error:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
-      message: "Server error while fetching events",
+      message:
+        "Server error while fetching events",
     });
   }
 };
 
-// Get one event
-const getEventById = async (req, res) => {
+// GET ONE EVENT
+const getEventById = async (
+  req,
+  res
+) => {
   try {
-    const event = await Event.findById(
-      req.params.id
-    ).populate(
-      "createdBy",
-      "name email"
-    );
+    const event =
+      await Event.findById(
+        req.params.id
+      ).populate(
+        "createdBy",
+        "name email"
+      );
 
     if (!event) {
       return res.status(404).json({
         success: false,
-        message: "Event not found",
+        message:
+          "Event not found",
       });
     }
 
@@ -129,133 +188,197 @@ const getEventById = async (req, res) => {
   } catch (error) {
     return res.status(400).json({
       success: false,
-      message: "Invalid event ID",
+      message:
+        "Invalid event ID",
     });
   }
 };
 
-// Update event
-const updateEvent = async (req, res) => {
+// UPDATE EVENT
+const updateEvent = async (
+  req,
+  res
+) => {
   try {
-    const event = await Event.findById(
-      req.params.id
-    );
+    const event =
+      await Event.findById(
+        req.params.id
+      );
 
     if (!event) {
       return res.status(404).json({
         success: false,
-        message: "Event not found",
-      });
-    }
-
-    if (
-      event.createdBy.toString() !==
-      req.user._id.toString()
-    ) {
-      return res.status(403).json({
-        success: false,
         message:
-          "You are not allowed to update this event",
+          "Event not found",
       });
     }
 
     const {
       title,
       description,
+      category,
       location,
       eventDate,
       capacity,
     } = req.body;
 
-    if (title !== undefined) {
+    if (
+      title !== undefined
+    ) {
       if (!title.trim()) {
-        return res.status(400).json({
-          success: false,
-          message: "Event title cannot be empty",
-        });
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message:
+              "Event title cannot be empty",
+          });
       }
 
-      event.title = title.trim();
+      event.title =
+        title.trim();
     }
 
-    if (description !== undefined) {
-      if (!description.trim()) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "Event description cannot be empty",
-        });
+    if (
+      description !== undefined
+    ) {
+      if (
+        !description.trim()
+      ) {
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message:
+              "Event description cannot be empty",
+          });
       }
 
       event.description =
         description.trim();
     }
 
-    if (location !== undefined) {
-      if (!location.trim()) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "Event location cannot be empty",
-        });
-      }
-
-      event.location = location.trim();
-    }
-
-    if (eventDate !== undefined) {
-      const parsedDate = new Date(eventDate);
-
+    if (
+      category !== undefined
+    ) {
       if (
-        Number.isNaN(parsedDate.getTime())
+        !ALLOWED_CATEGORIES.includes(
+          category
+        )
       ) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid event date",
-        });
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message:
+              "Invalid event category",
+          });
       }
 
-      if (parsedDate <= new Date()) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "Event date must be in the future",
-        });
-      }
-
-      event.eventDate = parsedDate;
+      event.category =
+        category;
     }
 
-    if (capacity !== undefined) {
-      const newCapacity = Number(capacity);
+    if (
+      location !== undefined
+    ) {
+      if (
+        !location.trim()
+      ) {
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message:
+              "Event location cannot be empty",
+          });
+      }
+
+      event.location =
+        location.trim();
+    }
+
+    if (
+      eventDate !== undefined
+    ) {
+      const parsedDate =
+        new Date(eventDate);
 
       if (
-        Number.isNaN(newCapacity) ||
+        Number.isNaN(
+          parsedDate.getTime()
+        )
+      ) {
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message:
+              "Invalid event date",
+          });
+      }
+
+      if (
+        parsedDate <=
+        new Date()
+      ) {
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message:
+              "Event date must be in the future",
+          });
+      }
+
+      event.eventDate =
+        parsedDate;
+    }
+
+    if (
+      capacity !== undefined
+    ) {
+      const newCapacity =
+        Number(capacity);
+
+      if (
+        Number.isNaN(
+          newCapacity
+        ) ||
         newCapacity < 1
       ) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "Capacity must be at least 1",
-        });
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message:
+              "Capacity must be at least 1",
+          });
       }
 
       const bookedSeats =
         event.capacity -
         event.availableSeats;
 
-      if (newCapacity < bookedSeats) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "Capacity cannot be lower than already booked seats",
-        });
+      if (
+        newCapacity <
+        bookedSeats
+      ) {
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message:
+              "Capacity cannot be lower than already booked seats",
+          });
       }
 
-      event.capacity = newCapacity;
+      event.capacity =
+        newCapacity;
 
       event.availableSeats =
-        newCapacity - bookedSeats;
+        newCapacity -
+        bookedSeats;
     }
 
     if (req.file) {
@@ -268,7 +391,8 @@ const updateEvent = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Event updated successfully",
+      message:
+        "Event updated successfully",
       event: updatedEvent,
     });
   } catch (error) {
@@ -285,28 +409,22 @@ const updateEvent = async (req, res) => {
   }
 };
 
-// Delete event
-const deleteEvent = async (req, res) => {
+// DELETE EVENT
+const deleteEvent = async (
+  req,
+  res
+) => {
   try {
-    const event = await Event.findById(
-      req.params.id
-    );
+    const event =
+      await Event.findById(
+        req.params.id
+      );
 
     if (!event) {
       return res.status(404).json({
         success: false,
-        message: "Event not found",
-      });
-    }
-
-    if (
-      event.createdBy.toString() !==
-      req.user._id.toString()
-    ) {
-      return res.status(403).json({
-        success: false,
         message:
-          "You are not allowed to delete this event",
+          "Event not found",
       });
     }
 
@@ -314,7 +432,8 @@ const deleteEvent = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Event deleted successfully",
+      message:
+        "Event deleted successfully",
     });
   } catch (error) {
     console.error(

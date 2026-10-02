@@ -54,6 +54,13 @@ export default function RootLayout() {
           }}
         />
 
+        <Stack.Screen
+          name="admin"
+          options={{
+            headerShown: false,
+          }}
+        />
+
         {/* Events */}
         <Stack.Screen
           name="events/create"

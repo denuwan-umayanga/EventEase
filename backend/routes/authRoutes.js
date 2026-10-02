@@ -1,9 +1,9 @@
 const express = require("express");
 
 const {
-  registerUser,
-  loginUser,
-  getCurrentUser,
+  register,
+  login,
+  getMe,
 } = require("../controllers/authController");
 
 const {
@@ -12,8 +12,23 @@ const {
 
 const router = express.Router();
 
-router.post("/register", registerUser);
-router.post("/login", loginUser);
-router.get("/me", protect, getCurrentUser);
+// Register normal user
+router.post(
+  "/register",
+  register
+);
+
+// Login user or admin
+router.post(
+  "/login",
+  login
+);
+
+// Get currently logged-in user
+router.get(
+  "/me",
+  protect,
+  getMe
+);
 
 module.exports = router;

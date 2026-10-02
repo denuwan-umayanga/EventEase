@@ -30,7 +30,10 @@ export default function EventDetailsScreen() {
     id: string;
   }>();
 
-  const { token, user } = useAuth();
+  const {
+    token,
+    user,
+  } = useAuth();
 
   const [event, setEvent] =
     useState<EventItem | null>(null);
@@ -41,7 +44,8 @@ export default function EventDetailsScreen() {
   const [deleting, setDeleting] =
     useState(false);
 
-  const [error, setError] = useState("");
+  const [error, setError] =
+    useState("");
 
   const loadEvent = async () => {
     try {
@@ -52,18 +56,20 @@ export default function EventDetailsScreen() {
         `${API_URL}/api/events/${id}`
       );
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (!response.ok) {
         setError(
           data.message ||
             "Unable to load event."
         );
+
         return;
       }
 
       setEvent(data.event);
-    } catch (err) {
+    } catch (error) {
       setError(
         "Unable to connect to the EventEase server."
       );
@@ -86,13 +92,16 @@ export default function EventDetailsScreen() {
         `${API_URL}/api/events/${id}`,
         {
           method: "DELETE",
+
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization:
+              `Bearer ${token}`,
           },
         }
       );
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       if (!response.ok) {
         Alert.alert(
@@ -100,21 +109,25 @@ export default function EventDetailsScreen() {
           data.message ||
             "Unable to delete event."
         );
+
         return;
       }
 
       Alert.alert(
         "Event Deleted",
-        "The event was deleted successfully.",
+        "The event has been deleted successfully.",
         [
           {
             text: "OK",
+
             onPress: () =>
-              router.replace("/home"),
+              router.replace(
+                "/admin" as any
+              ),
           },
         ]
       );
-    } catch (err) {
+    } catch (error) {
       Alert.alert(
         "Connection Error",
         "Unable to connect to the EventEase server."
@@ -124,15 +137,16 @@ export default function EventDetailsScreen() {
     }
   };
 
-  const handleDelete = () => {
+  const confirmDelete = () => {
     Alert.alert(
       "Delete Event?",
       "This action cannot be undone.",
       [
         {
-          text: "Cancel",
+          text: "Keep Event",
           style: "cancel",
         },
+
         {
           text: "Delete",
           style: "destructive",
@@ -145,9 +159,26 @@ export default function EventDetailsScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
+        <LinearGradient
+          colors={[
+            "#7C3AED",
+            "#EC4899",
+          ]}
+          style={styles.loadingIcon}
+        >
+          <Ionicons
+            name="calendar"
+            size={31}
+            color="#FFFFFF"
+          />
+        </LinearGradient>
+
         <ActivityIndicator
           size="large"
-          color="#2563EB"
+          color="#A855F7"
+          style={{
+            marginTop: 20,
+          }}
         />
 
         <Text style={styles.loadingText}>
@@ -163,7 +194,7 @@ export default function EventDetailsScreen() {
         <View style={styles.errorIcon}>
           <Ionicons
             name="alert-circle-outline"
-            size={43}
+            size={45}
             color="#DC2626"
           />
         </View>
@@ -174,7 +205,7 @@ export default function EventDetailsScreen() {
 
         <Text style={styles.errorText}>
           {error ||
-            "Event could not be found."}
+            "This event could not be found."}
         </Text>
 
         <Pressable
@@ -195,30 +226,34 @@ export default function EventDetailsScreen() {
     );
   }
 
-  const date = new Date(event.eventDate);
-
-  const ownerId =
-    typeof event.createdBy === "string"
-      ? event.createdBy
-      : event.createdBy._id;
-
-  const isOwner = ownerId === user?.id;
-
-  const soldOut =
-    event.availableSeats <= 0;
+  const date =
+    new Date(event.eventDate);
 
   const imageUrl =
     getImageUrl(event.image);
 
+  const soldOut =
+    event.availableSeats <= 0;
+
+  const isAdmin =
+    user?.isAdmin === true;
+
+  const category =
+    event.category ||
+    "Social";
+
   return (
     <ScrollView
       style={styles.container}
-      showsVerticalScrollIndicator={false}
       contentContainerStyle={
         styles.scrollContent
       }
+      showsVerticalScrollIndicator={
+        false
+      }
     >
-      {/* IMAGE HERO */}
+      {/* HERO IMAGE */}
+
       <View style={styles.hero}>
         {imageUrl ? (
           <Image
@@ -231,48 +266,63 @@ export default function EventDetailsScreen() {
         ) : (
           <LinearGradient
             colors={[
-              "#1D4ED8",
-              "#4F46E5",
+              "#6D28D9",
+              "#A855F7",
+              "#EC4899",
             ]}
-            style={styles.heroPlaceholder}
+            style={styles.heroImage}
           >
             <Ionicons
               name="calendar"
-              size={80}
-              color="rgba(255,255,255,0.20)"
+              size={85}
+              color="rgba(255,255,255,0.28)"
             />
           </LinearGradient>
         )}
 
         <LinearGradient
           colors={[
-            "rgba(15,23,42,0.05)",
-            "rgba(15,23,42,0.88)",
+            "rgba(17,24,39,0.02)",
+            "rgba(17,24,39,0.20)",
+            "rgba(17,24,39,0.88)",
           ]}
           style={styles.heroOverlay}
         />
 
         <View style={styles.heroContent}>
-          <View style={styles.heroTopRow}>
-            <View style={styles.heroIcon}>
+          <View style={styles.heroTop}>
+            <View style={styles.categoryPill}>
               <Ionicons
-                name="calendar"
-                size={30}
+                name={
+                  getCategoryIcon(
+                    category
+                  )
+                }
+                size={15}
                 color="#FFFFFF"
               />
+
+              <Text
+                style={
+                  styles.categoryText
+                }
+              >
+                {category}
+              </Text>
             </View>
 
             <View
               style={[
-                styles.heroStatus,
+                styles.statusPill,
+
                 soldOut
-                  ? styles.soldOutStatus
-                  : styles.availableStatus,
+                  ? styles.soldOutPill
+                  : styles.availablePill,
               ]}
             >
               <Text
                 style={
-                  styles.heroStatusText
+                  styles.statusText
                 }
               >
                 {soldOut
@@ -292,171 +342,316 @@ export default function EventDetailsScreen() {
 
             <View
               style={
-                styles.availabilityBadge
+                styles.heroMetaRow
               }
             >
-              <View
-                style={[
-                  styles.statusDot,
-                  soldOut
-                    ? styles.redDot
-                    : styles.greenDot,
-                ]}
+              <Ionicons
+                name="location-outline"
+                size={17}
+                color="#FFFFFF"
               />
 
               <Text
                 style={
-                  styles.availabilityText
+                  styles.heroLocation
                 }
+                numberOfLines={1}
               >
-                {soldOut
-                  ? "No seats remaining"
-                  : `${event.availableSeats} seats available`}
+                {event.location}
               </Text>
             </View>
           </View>
         </View>
       </View>
 
-      <View style={styles.content}>
-        {/* EVENT INFORMATION */}
+      <View style={styles.body}>
+        {/* AVAILABILITY */}
+
+        <View
+          style={styles.availabilityCard}
+        >
+          <LinearGradient
+            colors={[
+              "#F3E8FF",
+              "#FCE7F3",
+            ]}
+            style={
+              styles.availabilityIcon
+            }
+          >
+            <Ionicons
+              name="people-outline"
+              size={25}
+              color="#9333EA"
+            />
+          </LinearGradient>
+
+          <View
+            style={
+              styles.availabilityInfo
+            }
+          >
+            <Text
+              style={
+                styles.availabilityLabel
+              }
+            >
+              Seats available
+            </Text>
+
+            <Text
+              style={
+                styles.availabilityNumber
+              }
+            >
+              {event.availableSeats}
+            </Text>
+          </View>
+
+          <View
+            style={
+              styles.capacityBox
+            }
+          >
+            <Text
+              style={
+                styles.capacityLabel
+              }
+            >
+              CAPACITY
+            </Text>
+
+            <Text
+              style={
+                styles.capacityValue
+              }
+            >
+              {event.capacity}
+            </Text>
+          </View>
+        </View>
+
+        {/* DATE / TIME */}
+
         <View style={styles.infoCard}>
           <InfoRow
             icon="calendar-outline"
-            title="Date"
+            label="Date"
             value={date.toLocaleDateString(
               "en-US",
               {
-                weekday: "long",
-                month: "long",
-                day: "numeric",
-                year: "numeric",
+                weekday:
+                  "long",
+
+                month:
+                  "long",
+
+                day:
+                  "numeric",
+
+                year:
+                  "numeric",
               }
             )}
           />
 
           <InfoRow
             icon="time-outline"
-            title="Time"
+            label="Time"
             value={date.toLocaleTimeString(
               "en-US",
               {
-                hour: "2-digit",
-                minute: "2-digit",
+                hour:
+                  "2-digit",
+
+                minute:
+                  "2-digit",
               }
             )}
           />
 
           <InfoRow
             icon="location-outline"
-            title="Location"
-            value={event.location}
-          />
-
-          <InfoRow
-            icon="people-outline"
-            title="Capacity"
-            value={`${event.availableSeats} of ${event.capacity} seats available`}
+            label="Location"
+            value={
+              event.location
+            }
             last
           />
         </View>
 
         {/* DESCRIPTION */}
-        <View style={styles.section}>
+
+        <View
+          style={styles.sectionCard}
+        >
           <View
-            style={styles.sectionHeadingRow}
+            style={
+              styles.sectionHeader
+            }
           >
-            <View
-              style={styles.sectionIcon}
+            <LinearGradient
+              colors={[
+                "#F3E8FF",
+                "#FCE7F3",
+              ]}
+              style={
+                styles.sectionIcon
+              }
             >
               <Ionicons
                 name="information-circle-outline"
-                size={21}
-                color="#2563EB"
+                size={22}
+                color="#9333EA"
               />
-            </View>
+            </LinearGradient>
 
-            <Text
-              style={styles.sectionTitle}
-            >
-              About this event
-            </Text>
+            <View>
+              <Text
+                style={
+                  styles.sectionTitle
+                }
+              >
+                About this event
+              </Text>
+
+              <Text
+                style={
+                  styles.sectionSubtitle
+                }
+              >
+                Event information
+              </Text>
+            </View>
           </View>
 
-          <Text style={styles.description}>
+          <Text
+            style={
+              styles.description
+            }
+          >
             {event.description}
           </Text>
         </View>
 
-        {/* OWNER MANAGEMENT */}
-        {isOwner ? (
-          <View style={styles.ownerPanel}>
-            <View style={styles.ownerHeader}>
-              <View
-                style={styles.ownerIcon}
+        {/* ADMIN CONTROLS */}
+
+        {isAdmin ? (
+          <View
+            style={
+              styles.adminPanel
+            }
+          >
+            <View
+              style={
+                styles.adminHeader
+              }
+            >
+              <LinearGradient
+                colors={[
+                  "#7C3AED",
+                  "#EC4899",
+                ]}
+                style={
+                  styles.adminIcon
+                }
               >
                 <Ionicons
-                  name="settings-outline"
-                  size={21}
-                  color="#4F46E5"
+                  name="shield-checkmark-outline"
+                  size={22}
+                  color="#FFFFFF"
                 />
-              </View>
+              </LinearGradient>
 
-              <View style={styles.ownerText}>
+              <View style={{ flex: 1 }}>
                 <Text
-                  style={styles.ownerTitle}
+                  style={
+                    styles.adminTitle
+                  }
                 >
                   Event Management
                 </Text>
 
                 <Text
                   style={
-                    styles.ownerSubtitle
+                    styles.adminSubtitle
                   }
                 >
-                  You created this event
+                  Admin controls
+                </Text>
+              </View>
+
+              <View
+                style={
+                  styles.adminBadge
+                }
+              >
+                <Text
+                  style={
+                    styles.adminBadgeText
+                  }
+                >
+                  ADMIN
                 </Text>
               </View>
             </View>
 
-            <View style={styles.actionRow}>
+            <View
+              style={
+                styles.adminActions
+              }
+            >
               <Pressable
-                style={({ pressed }) => [
+                style={({
+                  pressed,
+                }) => [
                   styles.editButton,
+
                   pressed &&
-                    styles.buttonPressed,
+                    styles.pressed,
                 ]}
                 onPress={() =>
                   router.push({
                     pathname:
                       "/events/edit/[id]",
+
                     params: {
-                      id: event._id,
+                      id:
+                        event._id,
                     },
                   })
                 }
               >
                 <Ionicons
                   name="create-outline"
-                  size={19}
-                  color="#2563EB"
+                  size={20}
+                  color="#7C3AED"
                 />
 
                 <Text
-                  style={styles.editText}
+                  style={
+                    styles.editButtonText
+                  }
                 >
-                  Edit
+                  Edit Event
                 </Text>
               </Pressable>
 
               <Pressable
-                style={({ pressed }) => [
+                style={({
+                  pressed,
+                }) => [
                   styles.deleteButton,
+
                   pressed &&
-                    styles.buttonPressed,
+                    styles.pressed,
                 ]}
-                disabled={deleting}
-                onPress={handleDelete}
+                disabled={
+                  deleting
+                }
+                onPress={
+                  confirmDelete
+                }
               >
                 {deleting ? (
                   <ActivityIndicator
@@ -466,13 +661,13 @@ export default function EventDetailsScreen() {
                   <>
                     <Ionicons
                       name="trash-outline"
-                      size={19}
+                      size={20}
                       color="#DC2626"
                     />
 
                     <Text
                       style={
-                        styles.deleteText
+                        styles.deleteButtonText
                       }
                     >
                       Delete
@@ -481,89 +676,123 @@ export default function EventDetailsScreen() {
                 )}
               </Pressable>
             </View>
-          </View>
-        ) : null}
 
-        {/* BOOKING BUTTON */}
-        <Pressable
-          style={({ pressed }) => [
-            styles.bookingButtonWrapper,
-            pressed &&
-              !soldOut &&
-              styles.bookingPressed,
-          ]}
-          disabled={soldOut}
-          onPress={() =>
-            router.push({
-              pathname:
-                "/bookings/create",
-              params: {
-                eventId: event._id,
-              },
-            } as any)
-          }
-        >
-          <LinearGradient
-            colors={
-              !soldOut
-                ? [
-                    "#2563EB",
-                    "#4F46E5",
-                  ]
-                : [
-                    "#94A3B8",
-                    "#64748B",
-                  ]
-            }
-            style={styles.bookingGradient}
-          >
-            <View
-              style={styles.bookingIcon}
-            >
-              <Ionicons
-                name={
-                  !soldOut
-                    ? "ticket-outline"
-                    : "close-circle-outline"
-                }
-                size={24}
-                color="#FFFFFF"
-              />
-            </View>
-
-            <View
+            <Text
               style={
-                styles.bookingTextArea
+                styles.adminHelp
               }
             >
-              <Text
-                style={styles.bookingText}
-              >
-                {!soldOut
-                  ? "Book This Event"
-                  : "Event Sold Out"}
-              </Text>
+              Users can view and
+              book this event, but
+              only administrators
+              can modify it.
+            </Text>
+          </View>
+        ) : (
+          /* USER BOOKING */
 
-              {!soldOut && (
+          <Pressable
+            disabled={soldOut}
+            style={({
+              pressed,
+            }) => [
+              styles.bookWrapper,
+
+              pressed &&
+                !soldOut &&
+                styles.bookPressed,
+            ]}
+            onPress={() =>
+              router.push({
+                pathname:
+                  "/bookings/create",
+
+                params: {
+                  eventId:
+                    event._id,
+                },
+              } as any)
+            }
+          >
+            <LinearGradient
+              colors={
+                soldOut
+                  ? [
+                      "#9CA3AF",
+                      "#6B7280",
+                    ]
+                  : [
+                      "#7C3AED",
+                      "#A855F7",
+                      "#EC4899",
+                    ]
+              }
+              start={{
+                x: 0,
+                y: 0,
+              }}
+              end={{
+                x: 1,
+                y: 1,
+              }}
+              style={
+                styles.bookButton
+              }
+            >
+              <View
+                style={
+                  styles.bookIcon
+                }
+              >
+                <Ionicons
+                  name={
+                    soldOut
+                      ? "close-circle-outline"
+                      : "ticket-outline"
+                  }
+                  size={24}
+                  color="#FFFFFF"
+                />
+              </View>
+
+              <View
+                style={
+                  styles.bookTextArea
+                }
+              >
                 <Text
                   style={
-                    styles.bookingSubtext
+                    styles.bookTitle
                   }
                 >
-                  Reserve your seats now
+                  {soldOut
+                    ? "Event Sold Out"
+                    : "Book This Event"}
                 </Text>
-              )}
-            </View>
 
-            {!soldOut && (
-              <Ionicons
-                name="arrow-forward"
-                size={22}
-                color="#FFFFFF"
-              />
-            )}
-          </LinearGradient>
-        </Pressable>
+                {!soldOut && (
+                  <Text
+                    style={
+                      styles.bookSubtitle
+                    }
+                  >
+                    Choose your
+                    seats and
+                    confirm booking
+                  </Text>
+                )}
+              </View>
+
+              {!soldOut && (
+                <Ionicons
+                  name="arrow-forward"
+                  size={22}
+                  color="#FFFFFF"
+                />
+              )}
+            </LinearGradient>
+          </Pressable>
+        )}
       </View>
     </ScrollView>
   );
@@ -571,12 +800,12 @@ export default function EventDetailsScreen() {
 
 function InfoRow({
   icon,
-  title,
+  label,
   value,
   last = false,
 }: {
   icon: any;
-  title: string;
+  label: string;
   value: string;
   last?: boolean;
 }) {
@@ -584,25 +813,45 @@ function InfoRow({
     <View
       style={[
         styles.infoRow,
-        last && styles.lastInfoRow,
+
+        last &&
+          styles.infoRowLast,
       ]}
     >
-      <View style={styles.infoIcon}>
+      <LinearGradient
+        colors={[
+          "#F3E8FF",
+          "#FCE7F3",
+        ]}
+        style={
+          styles.infoIcon
+        }
+      >
         <Ionicons
           name={icon}
-          size={21}
-          color="#2563EB"
+          size={20}
+          color="#9333EA"
         />
-      </View>
+      </LinearGradient>
 
       <View
-        style={styles.infoTextContainer}
+        style={
+          styles.infoContent
+        }
       >
-        <Text style={styles.infoTitle}>
-          {title}
+        <Text
+          style={
+            styles.infoLabel
+          }
+        >
+          {label}
         </Text>
 
-        <Text style={styles.infoValue}>
+        <Text
+          style={
+            styles.infoValue
+          }
+        >
           {value}
         </Text>
       </View>
@@ -610,453 +859,643 @@ function InfoRow({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
-  },
+function getCategoryIcon(
+  category: string
+): any {
+  switch (category) {
+    case "Music":
+      return "musical-notes";
 
-  scrollContent: {
-    paddingBottom: 40,
-  },
+    case "Tech":
+      return "hardware-chip";
 
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 30,
-    backgroundColor: "#F8FAFC",
-  },
+    case "Business":
+      return "briefcase";
 
-  loadingText: {
-    marginTop: 13,
-    color: "#64748B",
-    fontWeight: "600",
-  },
+    case "Sports":
+      return "football";
 
-  errorIcon: {
-    width: 82,
-    height: 82,
-    borderRadius: 27,
-    backgroundColor: "#FEF2F2",
-    justifyContent: "center",
-    alignItems: "center",
-  },
+    case "Workshop":
+      return "construct";
 
-  /*
-   * HERO
-   */
-  hero: {
-    height: 320,
-    position: "relative",
-    overflow: "hidden",
-    backgroundColor: "#1D4ED8",
-  },
+    default:
+      return "people";
+  }
+}
 
-  heroImage: {
-    width: "100%",
-    height: "100%",
-  },
-
-  heroPlaceholder: {
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  heroOverlay: {
-    ...StyleSheet.absoluteFillObject,
-  },
-
-  heroContent: {
-    ...StyleSheet.absoluteFillObject,
-    paddingHorizontal: 23,
-    paddingTop: 28,
-    paddingBottom: 26,
-    justifyContent: "space-between",
-  },
-
-  heroTopRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-
-  heroIcon: {
-    width: 53,
-    height: 53,
-    borderRadius: 17,
-    backgroundColor:
-      "rgba(15,23,42,0.35)",
-    borderWidth: 1,
-    borderColor:
-      "rgba(255,255,255,0.22)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  heroStatus: {
-    paddingHorizontal: 13,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-
-  availableStatus: {
-    backgroundColor:
-      "rgba(22,163,74,0.94)",
-  },
-
-  soldOutStatus: {
-    backgroundColor:
-      "rgba(220,38,38,0.94)",
-  },
-
-  heroStatusText: {
-    color: "#FFFFFF",
-    fontWeight: "900",
-    fontSize: 11,
-    letterSpacing: 0.7,
-  },
-
-  title: {
-    color: "#FFFFFF",
-    fontSize: 30,
-    fontWeight: "900",
-    lineHeight: 36,
-    textShadowColor:
-      "rgba(0,0,0,0.30)",
-    textShadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    textShadowRadius: 3,
-  },
-
-  availabilityBadge: {
-    marginTop: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    backgroundColor:
-      "rgba(15,23,42,0.46)",
-    paddingHorizontal: 13,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor:
-      "rgba(255,255,255,0.15)",
-  },
-
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 7,
-  },
-
-  greenDot: {
-    backgroundColor: "#4ADE80",
-  },
-
-  redDot: {
-    backgroundColor: "#F87171",
-  },
-
-  availabilityText: {
-    color: "#FFFFFF",
-    fontWeight: "800",
-    fontSize: 13,
-  },
-
-  /*
-   * CONTENT
-   */
-  content: {
-    padding: 18,
-  },
-
-  infoCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
-    paddingHorizontal: 18,
-    marginBottom: 20,
-
-    shadowColor: "#0F172A",
-    shadowOpacity: 0.06,
-    shadowRadius: 15,
-    shadowOffset: {
-      width: 0,
-      height: 5,
+const styles =
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor:
+        "#FAF7FF",
     },
 
-    elevation: 3,
-  },
-
-  infoRow: {
-    flexDirection: "row",
-    paddingVertical: 17,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
-  },
-
-  lastInfoRow: {
-    borderBottomWidth: 0,
-  },
-
-  infoIcon: {
-    width: 43,
-    height: 43,
-    borderRadius: 13,
-    backgroundColor: "#EFF6FF",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 13,
-  },
-
-  infoTextContainer: {
-    flex: 1,
-    justifyContent: "center",
-  },
-
-  infoTitle: {
-    color: "#94A3B8",
-    fontSize: 11,
-    fontWeight: "800",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-
-  infoValue: {
-    color: "#0F172A",
-    fontWeight: "700",
-    marginTop: 4,
-    lineHeight: 20,
-  },
-
-  /*
-   * ABOUT
-   */
-  section: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
-    padding: 20,
-    marginBottom: 20,
-
-    shadowColor: "#0F172A",
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
-
-    elevation: 2,
-  },
-
-  sectionHeadingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 13,
-  },
-
-  sectionIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: "#EFF6FF",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 10,
-  },
-
-  sectionTitle: {
-    fontSize: 19,
-    fontWeight: "900",
-    color: "#0F172A",
-  },
-
-  description: {
-    color: "#475569",
-    lineHeight: 23,
-    fontSize: 14,
-  },
-
-  /*
-   * OWNER PANEL
-   */
-  ownerPanel: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
-    padding: 20,
-    marginBottom: 20,
-
-    shadowColor: "#0F172A",
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
-
-    elevation: 2,
-  },
-
-  ownerHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  ownerIcon: {
-    width: 43,
-    height: 43,
-    borderRadius: 13,
-    backgroundColor: "#EEF2FF",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 11,
-  },
-
-  ownerText: {
-    flex: 1,
-  },
-
-  ownerTitle: {
-    fontSize: 18,
-    fontWeight: "900",
-    color: "#0F172A",
-  },
-
-  ownerSubtitle: {
-    color: "#64748B",
-    marginTop: 3,
-  },
-
-  actionRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 18,
-  },
-
-  editButton: {
-    flex: 1,
-    height: 49,
-    borderRadius: 14,
-    backgroundColor: "#EFF6FF",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 7,
-  },
-
-  editText: {
-    color: "#2563EB",
-    fontWeight: "900",
-  },
-
-  deleteButton: {
-    flex: 1,
-    height: 49,
-    borderRadius: 14,
-    backgroundColor: "#FEF2F2",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 7,
-  },
-
-  deleteText: {
-    color: "#DC2626",
-    fontWeight: "900",
-  },
-
-  buttonPressed: {
-    opacity: 0.72,
-  },
-
-  /*
-   * BOOKING
-   */
-  bookingButtonWrapper: {
-    overflow: "hidden",
-    borderRadius: 18,
-
-    shadowColor: "#1D4ED8",
-    shadowOpacity: 0.22,
-    shadowRadius: 12,
-    shadowOffset: {
-      width: 0,
-      height: 6,
+    scrollContent: {
+      paddingBottom: 45,
     },
 
-    elevation: 6,
-  },
+    center: {
+      flex: 1,
+      justifyContent:
+        "center",
+      alignItems:
+        "center",
+      padding: 30,
+      backgroundColor:
+        "#FAF7FF",
+    },
 
-  bookingPressed: {
-    transform: [
-      {
-        scale: 0.98,
+    loadingIcon: {
+      width: 70,
+      height: 70,
+      borderRadius: 23,
+      justifyContent:
+        "center",
+      alignItems:
+        "center",
+    },
+
+    loadingText: {
+      color: "#6B7280",
+      marginTop: 12,
+      fontWeight: "600",
+    },
+
+    errorIcon: {
+      width: 80,
+      height: 80,
+      borderRadius: 27,
+      backgroundColor:
+        "#FEF2F2",
+      justifyContent:
+        "center",
+      alignItems:
+        "center",
+    },
+
+    errorTitle: {
+      color: "#111827",
+      fontSize: 21,
+      fontWeight: "900",
+      marginTop: 15,
+    },
+
+    errorText: {
+      color: "#6B7280",
+      textAlign: "center",
+      lineHeight: 20,
+      marginTop: 6,
+    },
+
+    retryButton: {
+      marginTop: 19,
+      paddingHorizontal: 18,
+      paddingVertical: 11,
+      borderRadius: 13,
+      backgroundColor:
+        "#9333EA",
+      flexDirection:
+        "row",
+      alignItems:
+        "center",
+      gap: 7,
+    },
+
+    retryText: {
+      color: "#FFFFFF",
+      fontWeight: "900",
+    },
+
+    pressed: {
+      opacity: 0.72,
+    },
+
+    /* HERO */
+
+    hero: {
+      height: 345,
+      position: "relative",
+      backgroundColor:
+        "#7C3AED",
+      overflow: "hidden",
+    },
+
+    heroImage: {
+      width: "100%",
+      height: "100%",
+      justifyContent:
+        "center",
+      alignItems:
+        "center",
+    },
+
+    heroOverlay: {
+      ...StyleSheet.absoluteFillObject,
+    },
+
+    heroContent: {
+      ...StyleSheet.absoluteFillObject,
+
+      paddingHorizontal: 21,
+      paddingTop: 26,
+      paddingBottom: 28,
+
+      justifyContent:
+        "space-between",
+    },
+
+    heroTop: {
+      flexDirection:
+        "row",
+
+      justifyContent:
+        "space-between",
+
+      alignItems:
+        "center",
+    },
+
+    categoryPill: {
+      flexDirection:
+        "row",
+
+      alignItems:
+        "center",
+
+      gap: 6,
+
+      backgroundColor:
+        "rgba(124,58,237,0.92)",
+
+      borderRadius: 20,
+
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+    },
+
+    categoryText: {
+      color: "#FFFFFF",
+      fontSize: 11,
+      fontWeight: "900",
+    },
+
+    statusPill: {
+      borderRadius: 20,
+
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+    },
+
+    availablePill: {
+      backgroundColor:
+        "rgba(22,163,74,0.94)",
+    },
+
+    soldOutPill: {
+      backgroundColor:
+        "rgba(220,38,38,0.94)",
+    },
+
+    statusText: {
+      color: "#FFFFFF",
+      fontSize: 10,
+      fontWeight: "900",
+      letterSpacing: 0.5,
+    },
+
+    title: {
+      color: "#FFFFFF",
+      fontSize: 31,
+      lineHeight: 37,
+      fontWeight: "900",
+
+      textShadowColor:
+        "rgba(0,0,0,0.35)",
+
+      textShadowRadius: 4,
+    },
+
+    heroMetaRow: {
+      flexDirection:
+        "row",
+
+      alignItems:
+        "center",
+
+      gap: 6,
+
+      marginTop: 10,
+    },
+
+    heroLocation: {
+      color: "#FFFFFF",
+      fontWeight: "700",
+      flex: 1,
+    },
+
+    /* BODY */
+
+    body: {
+      padding: 18,
+    },
+
+    availabilityCard: {
+      backgroundColor:
+        "#FFFFFF",
+
+      borderRadius: 22,
+
+      padding: 16,
+
+      flexDirection:
+        "row",
+
+      alignItems:
+        "center",
+
+      marginBottom: 16,
+
+      shadowColor:
+        "#581C87",
+
+      shadowOpacity: 0.06,
+      shadowRadius: 13,
+
+      elevation: 3,
+    },
+
+    availabilityIcon: {
+      width: 54,
+      height: 54,
+      borderRadius: 17,
+      justifyContent:
+        "center",
+      alignItems:
+        "center",
+    },
+
+    availabilityInfo: {
+      flex: 1,
+      marginLeft: 12,
+    },
+
+    availabilityLabel: {
+      color: "#6B7280",
+      fontSize: 12,
+      fontWeight: "700",
+    },
+
+    availabilityNumber: {
+      color: "#111827",
+      fontSize: 26,
+      fontWeight: "900",
+      marginTop: 1,
+    },
+
+    capacityBox: {
+      paddingHorizontal: 13,
+      paddingVertical: 9,
+
+      backgroundColor:
+        "#FAF5FF",
+
+      borderRadius: 13,
+
+      alignItems:
+        "center",
+    },
+
+    capacityLabel: {
+      color: "#A855F7",
+      fontSize: 8,
+      fontWeight: "900",
+      letterSpacing: 0.6,
+    },
+
+    capacityValue: {
+      color: "#7C3AED",
+      fontSize: 18,
+      fontWeight: "900",
+      marginTop: 2,
+    },
+
+    infoCard: {
+      backgroundColor:
+        "#FFFFFF",
+
+      borderRadius: 22,
+
+      paddingHorizontal: 17,
+
+      marginBottom: 16,
+    },
+
+    infoRow: {
+      flexDirection:
+        "row",
+
+      paddingVertical: 16,
+
+      borderBottomWidth: 1,
+
+      borderBottomColor:
+        "#F3E8FF",
+    },
+
+    infoRowLast: {
+      borderBottomWidth: 0,
+    },
+
+    infoIcon: {
+      width: 43,
+      height: 43,
+      borderRadius: 14,
+      justifyContent:
+        "center",
+      alignItems:
+        "center",
+      marginRight: 12,
+    },
+
+    infoContent: {
+      flex: 1,
+      justifyContent:
+        "center",
+    },
+
+    infoLabel: {
+      color: "#9CA3AF",
+      fontSize: 9,
+      fontWeight: "900",
+      letterSpacing: 0.5,
+      textTransform:
+        "uppercase",
+    },
+
+    infoValue: {
+      color: "#111827",
+      fontWeight: "800",
+      marginTop: 3,
+      lineHeight: 19,
+    },
+
+    /* DESCRIPTION */
+
+    sectionCard: {
+      backgroundColor:
+        "#FFFFFF",
+
+      borderRadius: 22,
+
+      padding: 18,
+
+      marginBottom: 16,
+    },
+
+    sectionHeader: {
+      flexDirection:
+        "row",
+
+      alignItems:
+        "center",
+
+      marginBottom: 14,
+    },
+
+    sectionIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 14,
+      justifyContent:
+        "center",
+      alignItems:
+        "center",
+      marginRight: 11,
+    },
+
+    sectionTitle: {
+      color: "#111827",
+      fontSize: 17,
+      fontWeight: "900",
+    },
+
+    sectionSubtitle: {
+      color: "#9CA3AF",
+      fontSize: 10,
+      marginTop: 2,
+    },
+
+    description: {
+      color: "#4B5563",
+      fontSize: 14,
+      lineHeight: 23,
+    },
+
+    /* ADMIN */
+
+    adminPanel: {
+      backgroundColor:
+        "#FFFFFF",
+
+      borderRadius: 22,
+
+      padding: 18,
+
+      borderWidth: 1,
+
+      borderColor:
+        "#E9D5FF",
+    },
+
+    adminHeader: {
+      flexDirection:
+        "row",
+
+      alignItems:
+        "center",
+    },
+
+    adminIcon: {
+      width: 46,
+      height: 46,
+      borderRadius: 15,
+      justifyContent:
+        "center",
+      alignItems:
+        "center",
+      marginRight: 11,
+    },
+
+    adminTitle: {
+      color: "#111827",
+      fontWeight: "900",
+      fontSize: 17,
+    },
+
+    adminSubtitle: {
+      color: "#9CA3AF",
+      fontSize: 11,
+      marginTop: 2,
+    },
+
+    adminBadge: {
+      backgroundColor:
+        "#F3E8FF",
+
+      borderRadius: 10,
+
+      paddingHorizontal: 8,
+      paddingVertical: 5,
+    },
+
+    adminBadgeText: {
+      color: "#7C3AED",
+      fontSize: 9,
+      fontWeight: "900",
+    },
+
+    adminActions: {
+      marginTop: 17,
+
+      flexDirection:
+        "row",
+
+      gap: 10,
+    },
+
+    editButton: {
+      flex: 1,
+      minHeight: 50,
+
+      borderRadius: 14,
+
+      backgroundColor:
+        "#F3E8FF",
+
+      flexDirection:
+        "row",
+
+      justifyContent:
+        "center",
+
+      alignItems:
+        "center",
+
+      gap: 7,
+    },
+
+    editButtonText: {
+      color: "#7C3AED",
+      fontWeight: "900",
+    },
+
+    deleteButton: {
+      flex: 1,
+      minHeight: 50,
+
+      borderRadius: 14,
+
+      backgroundColor:
+        "#FEF2F2",
+
+      flexDirection:
+        "row",
+
+      justifyContent:
+        "center",
+
+      alignItems:
+        "center",
+
+      gap: 7,
+    },
+
+    deleteButtonText: {
+      color: "#DC2626",
+      fontWeight: "900",
+    },
+
+    adminHelp: {
+      color: "#9CA3AF",
+      fontSize: 10,
+      lineHeight: 16,
+      marginTop: 13,
+      textAlign: "center",
+    },
+
+    /* BOOK */
+
+    bookWrapper: {
+      borderRadius: 20,
+      overflow: "hidden",
+
+      shadowColor:
+        "#7C3AED",
+
+      shadowOpacity: 0.22,
+      shadowRadius: 13,
+
+      shadowOffset: {
+        width: 0,
+        height: 6,
       },
-    ],
-    opacity: 0.92,
-  },
 
-  bookingGradient: {
-    minHeight: 70,
-    flexDirection: "row",
-    gap: 11,
-    alignItems: "center",
-    paddingHorizontal: 17,
-  },
+      elevation: 6,
+    },
 
-  bookingIcon: {
-    width: 43,
-    height: 43,
-    borderRadius: 13,
-    backgroundColor:
-      "rgba(255,255,255,0.16)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
+    bookPressed: {
+      opacity: 0.92,
 
-  bookingTextArea: {
-    flex: 1,
-  },
+      transform: [
+        {
+          scale: 0.98,
+        },
+      ],
+    },
 
-  bookingText: {
-    color: "#FFFFFF",
-    fontWeight: "900",
-    fontSize: 16,
-  },
+    bookButton: {
+      minHeight: 73,
 
-  bookingSubtext: {
-    color: "#DBEAFE",
-    marginTop: 2,
-    fontSize: 12,
-  },
+      paddingHorizontal: 16,
 
-  /*
-   * ERROR
-   */
-  errorTitle: {
-    marginTop: 16,
-    fontSize: 20,
-    fontWeight: "900",
-    color: "#0F172A",
-  },
+      flexDirection:
+        "row",
 
-  errorText: {
-    marginTop: 7,
-    color: "#64748B",
-    textAlign: "center",
-    lineHeight: 20,
-  },
+      alignItems:
+        "center",
 
-  retryButton: {
-    marginTop: 20,
-    backgroundColor: "#2563EB",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 13,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7,
-  },
+      gap: 11,
+    },
 
-  retryText: {
-    color: "#FFFFFF",
-    fontWeight: "800",
-  },
-});
+    bookIcon: {
+      width: 45,
+      height: 45,
+      borderRadius: 15,
+
+      backgroundColor:
+        "rgba(255,255,255,0.16)",
+
+      justifyContent:
+        "center",
+
+      alignItems:
+        "center",
+    },
+
+    bookTextArea: {
+      flex: 1,
+    },
+
+    bookTitle: {
+      color: "#FFFFFF",
+      fontSize: 16,
+      fontWeight: "900",
+    },
+
+    bookSubtitle: {
+      color: "#FCE7F3",
+      fontSize: 11,
+      marginTop: 2,
+    },
+  });

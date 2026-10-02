@@ -6,11 +6,16 @@ const {
   getEventById,
   updateEvent,
   deleteEvent,
-} = require("../controllers/eventController");
+} = require(
+  "../controllers/eventController"
+);
 
 const {
   protect,
-} = require("../middleware/authMiddleware");
+  adminOnly,
+} = require(
+  "../middleware/authMiddleware"
+);
 
 const upload = require(
   "../middleware/uploadMiddleware"
@@ -18,12 +23,22 @@ const upload = require(
 
 const router = express.Router();
 
-router.get("/", getEvents);
-router.get("/:id", getEventById);
+// PUBLIC
+router.get(
+  "/",
+  getEvents
+);
 
+router.get(
+  "/:id",
+  getEventById
+);
+
+// ADMIN ONLY
 router.post(
   "/",
   protect,
+  adminOnly,
   upload.single("image"),
   createEvent
 );
@@ -31,6 +46,7 @@ router.post(
 router.put(
   "/:id",
   protect,
+  adminOnly,
   upload.single("image"),
   updateEvent
 );
@@ -38,6 +54,7 @@ router.put(
 router.delete(
   "/:id",
   protect,
+  adminOnly,
   deleteEvent
 );
 

@@ -7,32 +7,46 @@ import React, {
   useState,
 } from "react";
 
-type User = {
+export type AuthUser = {
   id: string;
   name: string;
   email: string;
+  isAdmin: boolean;
 };
 
 type AuthContextType = {
-  user: User | null;
   token: string | null;
+  user: AuthUser | null;
   loading: boolean;
-  signIn: (token: string, user: User) => Promise<void>;
+
+  signIn: (
+    token: string,
+    user: AuthUser
+  ) => Promise<void>;
+
   signOut: () => Promise<void>;
 };
 
-const AuthContext = createContext<AuthContextType | undefined>(
-  undefined
-);
+const AuthContext =
+  createContext<AuthContextType | null>(
+    null
+  );
 
-export const AuthProvider = ({
-  children,
-}: {
+type Props = {
   children: ReactNode;
-}) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+};
+
+export function AuthProvider({
+  children,
+}: Props) {
+  const [token, setToken] =
+    useState<string | null>(null);
+
+  const [user, setUser] =
+    useState<AuthUser | null>(null);
+
+  const [loading, setLoading] =
+    useState(true);
 
   useEffect(() => {
     loadStoredAuth();
@@ -40,15 +54,46 @@ export const AuthProvider = ({
 
   const loadStoredAuth = async () => {
     try {
-      const storedToken = await AsyncStorage.getItem("token");
-      const storedUser = await AsyncStorage.getItem("user");
+      const storedToken =
+        await AsyncStorage.getItem(
+          "eventease_token"
+        );
 
-      if (storedToken && storedUser) {
+      const storedUser =
+        await AsyncStorage.getItem(
+          "eventease_user"
+        );
+
+      if (
+        storedToken &&
+        storedUser
+      ) {
+        const parsedUser =
+          JSON.parse(storedUser);
+
         setToken(storedToken);
-        setUser(JSON.parse(storedUser));
+
+        setUser({
+          id: parsedUser.id,
+          name: parsedUser.name,
+          email: parsedUser.email,
+          isAdmin:
+            parsedUser.isAdmin === true,
+        });
       }
     } catch (error) {
-      console.log("Failed to load stored authentication");
+      console.log(
+        "Load auth error:",
+        error
+      );
+
+      await AsyncStorage.removeItem(
+        "eventease_token"
+      );
+
+      await AsyncStorage.removeItem(
+        "eventease_user"
+      );
     } finally {
       setLoading(false);
     }
@@ -56,21 +101,40 @@ export const AuthProvider = ({
 
   const signIn = async (
     newToken: string,
-    newUser: User
+    newUser: AuthUser
   ) => {
-    await AsyncStorage.setItem("token", newToken);
+    const normalizedUser: AuthUser = {
+      id: newUser.id,
+      name: newUser.name,
+      email: newUser.email,
+      isAdmin:
+        newUser.isAdmin === true,
+    };
+
     await AsyncStorage.setItem(
-      "user",
-      JSON.stringify(newUser)
+      "eventease_token",
+      newToken
+    );
+
+    await AsyncStorage.setItem(
+      "eventease_user",
+      JSON.stringify(
+        normalizedUser
+      )
     );
 
     setToken(newToken);
-    setUser(newUser);
+    setUser(normalizedUser);
   };
 
   const signOut = async () => {
-    await AsyncStorage.removeItem("token");
-    await AsyncStorage.removeItem("user");
+    await AsyncStorage.removeItem(
+      "eventease_token"
+    );
+
+    await AsyncStorage.removeItem(
+      "eventease_user"
+    );
 
     setToken(null);
     setUser(null);
@@ -79,8 +143,8 @@ export const AuthProvider = ({
   return (
     <AuthContext.Provider
       value={{
-        user,
         token,
+        user,
         loading,
         signIn,
         signOut,
@@ -89,10 +153,11 @@ export const AuthProvider = ({
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
+export function useAuth() {
+  const context =
+    useContext(AuthContext);
 
   if (!context) {
     throw new Error(
@@ -101,4 +166,4 @@ export const useAuth = () => {
   }
 
   return context;
-};
+}
